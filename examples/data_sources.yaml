@@ -1,0 +1,61 @@
+version: 1.1
+file_type: data-source-administration
+name: example
+domain: enterprise-attack
+systems:
+  - applicable_to: default
+    platform:
+      - all
+  - applicable_to: servers
+    platform:
+      - Windows
+  - applicable_to: workstations
+    platform:
+      - Windows
+data_sources:
+  - data_source_name: Process Creation
+    data_source:
+      - applicable_to:
+          - default
+        date_registered: 2022-10-10T00:00:00.000Z
+        date_connected: 2022-10-10T00:00:00.000Z
+        products:
+          - Windows Event Logs
+        available_for_data_analytics: true
+        comment: null
+        data_quality:
+            device_completeness: 1
+            data_field_completeness: 1
+            timeliness: 1
+            consistency: 1
+            retention: 1
+  - data_source_name: Process Metadata
+    data_source:
+      - applicable_to:
+          - default
+        date_registered: 2022-10-10T00:00:00.000Z
+        date_connected: 2022-10-10T00:00:00.000Z
+        products:
+          - Windows Event Logs
+        available_for_data_analytics: true
+        comment: null
+        data_quality:
+            device_completeness: 1
+            data_field_completeness: 1
+            timeliness: 1
+            consistency: 1
+            retention: 1
+      - applicable_to:
+          - workstations
+        date_registered: 2022-10-10T00:00:00.000Z
+        date_connected: 2022-10-10T00:00:00.000Z
+        products:
+          - Windows Event Logs
+        available_for_data_analytics: true
+        comment: null
+        data_quality:
+            device_completeness: 1
+            data_field_completeness: 1
+            timeliness: 1
+            consistency: 1
+            retention: 1

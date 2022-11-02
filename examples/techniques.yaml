@@ -1,0 +1,69 @@
+version: 1.2
+file_type: technique-administration
+name: example
+domain: enterprise-attack
+platform:
+  - all
+techniques:
+  - technique_id: T1558.003
+    technique_name: Kerberoasting
+    detection:
+      - applicable_to:
+          - Windows 3.1
+        location:
+          - 'Splunk: Detection X'
+          - 'Splunk: Detection Y'
+        comment: ''
+        score_logbook:
+          - date: 2022-09-26T00:00:00.000Z
+            score: 1
+            comment: Initial score
+    visibility:
+      - applicable_to:
+          - all
+        comment: ''
+        score_logbook:
+          - date: null
+            score: 0
+            comment: ''
+            auto_generated: false
+  - technique_id: T1055
+    technique_name: Process Injection
+    detection:
+      - applicable_to:
+          - all
+        location:
+          - 'Splunk: Detection Z'
+          - 'EDR: Detection A'
+        comment: ''
+        score_logbook:
+          - date: 2022-09-26T00:00:00.000Z
+            score: 1
+            comment: Initial score
+      - applicable_to:
+          - Windows 3.1
+        location:
+          - 'Splunk: Detection ZZ'
+        comment: ''
+        score_logbook:
+          - date: 2022-09-26T00:00:00.000Z
+            score: 1
+            comment: Initial score
+      - applicable_to:
+          - non existing test
+        location:
+          - 'EDR: Detection AA'
+        comment: ''
+        score_logbook:
+          - date: 2022-09-26T00:00:00.000Z
+            score: 1
+            comment: Initial score
+    visibility:
+      - applicable_to:
+          - all
+        comment: ''
+        score_logbook:
+          - date: null
+            score: 0
+            comment: ''
+            auto_generated: false

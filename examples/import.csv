@@ -1,0 +1,5 @@
+T1574.011,A malicious service name was registered on the machine
+T1574,A suspicious symbolic link was created
+T1572,Network traffic proxy redirector detected
+T1570,Possible exfiltration of archived data
+T1569.002,Suspicious remote activity
