@@ -123,6 +123,7 @@ class DettectBase(object):
                 if 'date' in line:
                     line = line.replace('T00:00:00Z', 'T00:00:00.000Z').replace(' 00:00:00', 'T00:00:00.000Z')
                 yaml_file.write(line)
+            self.filename = filename if filename else self.filename
 
     @staticmethod
     def _set_yaml_dv_comments(yaml_object: object) -> object:
