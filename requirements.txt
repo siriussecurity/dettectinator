@@ -6,3 +6,4 @@ msal==1.20.0
 stix2==3.0.1
 openpyxl==3.0.10
 suricataparser==1.0.0
+addonfactory-splunk-conf-parser-lib==0.3.4

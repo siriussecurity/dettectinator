@@ -592,6 +592,7 @@ class ImportSuricataRules(ImportBase):
             meta_data_dict[splitted[0]] = splitted[1]
         return meta_data_dict
 
+
 class ImportSigmaRules(ImportBase):
     """
     Import data from a folder with Sigma rules.
@@ -639,3 +640,58 @@ class ImportSigmaRules(ImportBase):
                         for tag in yaml_content['tags']:
                             if tag.startswith('attack.t'):
                                 yield tag[7:].upper(), yaml_content['title']
+
+
+class ImportSplunkConfigSearches(ImportBase):
+    """
+    Import data from a Splunk config that contains saved searches (savedsearches.conf). It uses
+    the action.correlationsearch.annotations attribute to get the mitre_attack techniques:
+
+    action.correlationsearch.annotations = {"mitre_attack": ["T1560.001", "T1560"]}
+
+    Searches that contain a action.correlationsearch.label and don't have disabled=1 are included.
+    """
+
+    def __init__(self, parameters: dict) -> None:
+        super().__init__(parameters)
+        if 'file' not in self._parameters:
+            raise Exception('ImportSplunkConfigSearches: "file" parameter is required.')
+
+    @staticmethod
+    def set_plugin_params(parser: ArgumentParser) -> None:
+        """
+        Set command line arguments specific for the plugin
+        :param parser: Argument parser
+        """
+        parser.add_argument('--file', help='Path of the savedsearches config file to import', required=True)
+
+    def get_data_from_source(self) -> Iterable:
+        """
+        Gets the use-case/technique data from the source.
+        :return: Iterable, yields technique, detection
+        """
+        file = self._parameters['file']
+        print(f'Reading data from "{file}"')
+
+        import addonfactory_splunk_conf_parser_lib as splunk_conf_parser
+        splunk_config = None
+        with open(file, "r") as f:
+            splunk_config = splunk_conf_parser.TABConfigParser()
+            splunk_config.read_file(f)
+
+        IGNORE_LIST = ['default']
+        for section in splunk_config.sections():
+            if splunk_config[section].name in IGNORE_LIST \
+               or 'action.correlationsearch.label' not in splunk_config[section].keys() \
+               or 'action.correlationsearch.annotations' not in splunk_config[section].keys() \
+               or ('disabled' in splunk_config[section].keys() and splunk_config[section]['disabled'] == '1'):
+                continue
+
+            try:
+                annotations = json.loads(splunk_config[section]['action.correlationsearch.annotations'])
+            except Exception as e:
+                print(f'Could not parse mitre_attack entry in action.correlationsearch.annotations ({str(e)}): {splunk_config[section].name}')
+            else:
+                if 'mitre_attack' in annotations.keys():
+                    for technique in annotations['mitre_attack']:
+                        yield technique, splunk_config[section].name

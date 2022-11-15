@@ -26,7 +26,7 @@ setuptools.setup(
     },
     keywords="mitre attack dettect soc threat hunting",
     packages=setuptools.find_packages(exclude=["examples", "tests"]),
-    install_requires=["requests", "ruamel.yaml", "attackcti", "python-dateutil", "msal", "stix2", "openpyxl", "suricataparser"],
+    install_requires=["requests", "ruamel.yaml", "attackcti", "python-dateutil", "msal", "stix2", "openpyxl", "suricataparser", "addonfactory-splunk-conf-parser-lib"],
     license='GPL3',
     classifiers=[
         'Development Status :: 2 - Pre-Alpha',
