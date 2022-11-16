@@ -5,7 +5,7 @@ Dettectinator - The Python library to your [DeTT&amp;CT](https://github.com/rabo
 
 Dettectinator is built to be included in your SOC automation tooling. It can be included as a Python library or it can be used via the command line.
 
-Dettectinator provides plugins to read detections from your SIEM or EDR and create a DeTT&CT YAML for it, so that you can use it to visualize your ATT&CK detection coverage in the ATT&CK  Navigator.
+Dettectinator provides plugins to read detections from your SIEM or EDR and create/update the DeTT&CT YAML file, so that you can use it to visualize your ATT&CK detection coverage in the ATT&CK Navigator.
 
 Currently de CLI is limited to processing detections through these plugins, the library can also be used for processing data sources.
 

@@ -5,7 +5,7 @@ Dettectinator - The Python library to your DeTT&amp;CT YAML files.
 
 Dettectinator is built to be included in your SOC automation tooling. It can be included as a Python library (`pip install dettectinator`) or it can be used via the command line (`python dettectinator.py -h`).
 
-Dettectinator also provides plugins to read detections from your SIEM or EDR and create a DeTT&CT YAML for it, so that you can use it to visualize your ATT&CK detection coverage in the ATT&CK  Navigator. Currently, we have plugins for the following tools:
+Dettectinator also provides plugins to read detections from your SIEM or EDR and create/update the DeTT&CT YAML file, so that you can use it to visualize your ATT&CK detection coverage in the ATT&CK Navigator. Currently, we have plugins for the following tools:
 - Microsoft Sentinel: Analytics Rules (API)
 - Microsoft Defender: Alerts (API)
 - Microsoft Defender: Custom Detection Rules (API, _under construction_)
