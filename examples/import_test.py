@@ -16,13 +16,13 @@ import argparse
 try:
     # When dettectinator is installed as python library
     from dettectinator import DettectTechniquesAdministration
-    from dettectinator.plugins.data_import import ImportCsv, ImportTaniumSignals, ImportDefenderAlerts, \
-        ImportSentinelAlertRules
+    from dettectinator.plugins.data_import import DetectionCsv, DetectionTaniumSignals, DetectionDefenderAlerts, \
+        DetectionSentinelAlertRules
 except ModuleNotFoundError:
     # When dettectinator is not installed as python library
     sys.path.append(os.path.dirname(os.path.abspath(__file__).replace('examples', 'dettectinator')))
     from dettectinator import DettectTechniquesAdministration
-    from plugins.data_import import ImportCsv, ImportTaniumSignals, ImportDefenderAlerts, ImportSentinelAlertRules
+    from plugins.data_import import DetectionCsv, DetectionTaniumSignals, DetectionDefenderAlerts, DetectionSentinelAlertRules
 
 
 def test_file(local_stix_path: str):
@@ -30,7 +30,7 @@ def test_file(local_stix_path: str):
     Tests an import via ImportCsv plugin.
     """
     parameters = {'file': 'import.csv'}
-    import_csv = ImportCsv(parameters)
+    import_csv = DetectionCsv(parameters)
     use_cases = import_csv.get_attack_techniques(['test'], 'Test')
     print(json.dumps(use_cases, indent=4))
 
@@ -44,7 +44,7 @@ def test_defender(local_stix_path: str):
     Tests an import via ImportDefenderAlerts plugin.
     """
     parameters = {'app_id': '', 'tenant_id': ''}
-    import_defender = ImportDefenderAlerts(parameters)
+    import_defender = DetectionDefenderAlerts(parameters)
     use_cases = import_defender.get_attack_techniques(['test'], 'MD')
     print(json.dumps(use_cases, indent=4))
 
@@ -58,7 +58,7 @@ def test_tanium(local_stix_path: str):
     Tests an import via ImportTaniumSignals plugin.
     """
     parameters = {'host': '', 'user': '', 'password': '', 'search_prefix': ''}
-    import_tanium = ImportTaniumSignals(parameters)
+    import_tanium = DetectionTaniumSignals(parameters)
     use_cases = import_tanium.get_attack_techniques(['all'], 'Tanium')
     print(json.dumps(use_cases, indent=4))
 
@@ -72,7 +72,7 @@ def test_sentinel(local_stix_path: str):
     Tests an import via ImportSentinelAlertRules plugin.
     """
     parameters = {'app_id': '', 'tenant_id': '', 'subscription_id': '', 'resource_group': '', 'workspace': ''}
-    import_sentinel = ImportSentinelAlertRules(parameters)
+    import_sentinel = DetectionSentinelAlertRules(parameters)
     use_cases = import_sentinel.get_attack_techniques(['test'], 'test')
     print(json.dumps(use_cases, indent=4))
 

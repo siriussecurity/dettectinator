@@ -28,7 +28,7 @@ except ModuleNotFoundError:
 urllib3.disable_warnings()
 
 
-class ImportBase:
+class DetectionBase:
     """
     Base class for importing use-case/technique data
     """
@@ -83,7 +83,7 @@ class ImportBase:
         raise NotImplementedError()
 
 
-class ImportCsv(ImportBase):
+class DetectionCsv(DetectionBase):
     """
     Import data from a CSV file, formatted TechniqueId,UseCase
     """
@@ -119,7 +119,7 @@ class ImportCsv(ImportBase):
             yield technique, use_case
 
 
-class ImportExcel(ImportBase):
+class DetectionExcel(DetectionBase):
     """
     Import data from an Excel file, having a worksheet with two columns: TechniqueId and UseCase
     """
@@ -156,7 +156,7 @@ class ImportExcel(ImportBase):
                 yield technique.strip(), detection
 
 
-class ImportAzureAuthBase(ImportBase):
+class DetectionAzureAuthBase(DetectionBase):
     """
     Base class for import plugins that authenticate against Azure AD
     """
@@ -198,7 +198,7 @@ class ImportAzureAuthBase(ImportBase):
             return Azure.connect_device_flow(self._app_id, self._tenant_id, endpoint)
 
 
-class ImportSentinelAlertRules(ImportAzureAuthBase):
+class DetectionSentinelAlertRules(DetectionAzureAuthBase):
     """
     Import Analytics Rules from the Sentinel API
     """
@@ -226,7 +226,7 @@ class ImportSentinelAlertRules(ImportAzureAuthBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
-        ImportAzureAuthBase.set_plugin_params(parser)
+        DetectionAzureAuthBase.set_plugin_params(parser)
 
         parser.add_argument('--subscription_id', help='Azure subscription id for Sentinel', required=True)
         parser.add_argument('--resource_group', help='Azure resource group for Sentinel', required=True)
@@ -277,7 +277,7 @@ class ImportSentinelAlertRules(ImportAzureAuthBase):
         return result
 
 
-class ImportDefenderIdentityRules(ImportBase):
+class DetectionDefenderIdentityRules(DetectionBase):
     """
     Import rules for Microsoft Defender for Identity from their Github webpage:
     https://github.com/MicrosoftDocs/ATADocs/tree/master/ATPDocs
@@ -344,7 +344,7 @@ class ImportDefenderIdentityRules(ImportBase):
                             current_detection = None
 
 
-class ImportDefenderAlerts(ImportAzureAuthBase):
+class DetectionDefenderAlerts(DetectionAzureAuthBase):
     """
     Import alerts and techniques from the Microsft Defender API.
     """
@@ -405,7 +405,7 @@ class ImportDefenderAlerts(ImportAzureAuthBase):
         return result
 
 
-class ImportTaniumSignals(ImportBase):
+class DetectionTaniumSignals(DetectionBase):
     """
     Class for importing signals with ATT&CK technique mapping from Tanium.
     """
@@ -470,7 +470,7 @@ class ImportTaniumSignals(ImportBase):
             raise Exception(f'ImportTaniumSignals: get all signals failed: {r.text}')
 
 
-class ImportElasticSecurityRules(ImportBase):
+class DetectionElasticSecurityRules(DetectionBase):
     """
     Class for importing Elastic Security rules with ATT&CK technique mapping.
     """
@@ -535,7 +535,7 @@ class ImportElasticSecurityRules(ImportBase):
             raise Exception(f'ImportElasticSecurityRules: get all rules failed: {r.text}')
 
 
-class ImportSuricataRules(ImportBase):
+class DetectionSuricataRules(DetectionBase):
     """
     Import data from a Suricata rules file. It expects a metadata meta-setting containing a field with the name
     mitre_technique_id containing the ATT&CK technique ID.
@@ -593,7 +593,7 @@ class ImportSuricataRules(ImportBase):
         return meta_data_dict
 
 
-class ImportSigmaRules(ImportBase):
+class DetectionSigmaRules(DetectionBase):
     """
     Import data from a folder with Sigma rules.
     """
@@ -642,7 +642,7 @@ class ImportSigmaRules(ImportBase):
                                 yield tag[7:].upper(), yaml_content['title']
 
 
-class ImportSplunkConfigSearches(ImportBase):
+class DetectionSplunkConfigSearches(DetectionBase):
     """
     Import data from a Splunk config that contains saved searches (savedsearches.conf). It uses
     the action.correlationsearch.annotations attribute to get the mitre_attack techniques:
