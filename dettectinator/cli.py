@@ -185,7 +185,7 @@ class CommandLine:
                 dettect.set_name(arguments.name)
 
             dettect.save_yaml_file(output_file)
-            print(f'Techniques YAML file written: {dettect.get_filename()}')
+            print(f'DeTT&CT YAML file written: {dettect.get_filename()}')
 
             output = warnings + results
             if len(output) > 0:
