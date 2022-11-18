@@ -176,15 +176,13 @@ class DatasourceWindowsSysmon(DatasourceOssemBase):
         for record in ossem_data:
             config_items = sysmon_config.findall(f'.//{record["Audit Category"]}')
 
-            # Event type is not found in the config, which means that there is no filtering
-            if len(config_items) == 0:
-                yield str(record['Component']).title(), f'{record["EventID"]}: {record["Event Name"]}'
-                continue
-
+            # If the is an event type with an onmatch == include attribute without child items this means
+            # that nothing is being logged for this event type
             for config_item in config_items:
-                if config_item.attrib['onmatch'] == "include" and len(config_item.getchildren()) > 0:
-                    # There is an include attribute in the config with sub elements, which means there is logging
-                    yield str(record['Component']).title(), f'{record["EventID"]}: {record["Event Name"]}'
+                if config_item.attrib['onmatch'] == "include" and len(config_item.getchildren()) == 0:
+                    continue
+
+            yield str(record['Component']).title(), f'{record["EventID"]}: {record["Event Name"]}'
 
     def _get_sysmon_config(self) -> Element:
         """
