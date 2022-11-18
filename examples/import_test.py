@@ -15,14 +15,15 @@ import argparse
 
 try:
     # When dettectinator is installed as python library
-    from dettectinator import DettectTechniquesAdministration
-    from dettectinator.plugins.data_import import DetectionCsv, DetectionTaniumSignals, DetectionDefenderAlerts, \
-        DetectionSentinelAlertRules
+    from dettectinator import DettectTechniquesAdministration, DettectDataSourcesAdministration
+    from dettectinator.plugins.detection_import import DetectionCsv, DetectionTaniumSignals, DetectionDefenderAlerts, DetectionSentinelAlertRules
+    from plugins.datasources_import import DatasourceDefenderEndpoints
 except ModuleNotFoundError:
     # When dettectinator is not installed as python library
     sys.path.append(os.path.dirname(os.path.abspath(__file__).replace('examples', 'dettectinator')))
-    from dettectinator import DettectTechniquesAdministration
-    from plugins.data_import import DetectionCsv, DetectionTaniumSignals, DetectionDefenderAlerts, DetectionSentinelAlertRules
+    from dettectinator import DettectTechniquesAdministration, DettectDataSourcesAdministration
+    from plugins.detection_import import DetectionCsv, DetectionTaniumSignals, DetectionDefenderAlerts, DetectionSentinelAlertRules
+    from plugins.datasources_import import DatasourceDefenderEndpoints
 
 
 def test_file(local_stix_path: str):
@@ -81,13 +82,26 @@ def test_sentinel(local_stix_path: str):
     dettect.save_yaml_file('techniques_import_sentinel.yaml')
 
 
+def test_datasources_mde(local_stix_path: str):
+
+    parameters = {}
+    import_datasources_mde = DatasourceDefenderEndpoints(parameters)
+    datasources = import_datasources_mde.get_attack_data_sources(['test'])
+    print(json.dumps(datasources, indent=4))
+
+    dettect = DettectDataSourcesAdministration(local_stix_path=local_stix_path)
+    dettect.update_data_sources(datasources, False, False)
+    dettect.save_yaml_file('datasources_import_mde.yaml')
+
+
 if __name__ == '__main__':
     menu_parser = argparse.ArgumentParser()
     menu_parser.add_argument('--local-stix-path', help="Path to a local STIX ATT&CK repository")
     args = menu_parser.parse_args()
     arg_local_stix_path = args.local_stix_path
 
-    test_file(arg_local_stix_path)
+    # test_file(arg_local_stix_path)
     # test_defender(arg_local_stix_path)
     # test_tanium(arg_local_stix_path)
     # test_sentinel(arg_local_stix_path)
+    test_datasources_mde(arg_local_stix_path)
