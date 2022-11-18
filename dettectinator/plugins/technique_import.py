@@ -28,7 +28,7 @@ except ModuleNotFoundError:
 urllib3.disable_warnings()
 
 
-class DetectionBase:
+class TechniqueBase:
     """
     Base class for importing use-case/technique data
     """
@@ -84,7 +84,7 @@ class DetectionBase:
         raise NotImplementedError()
 
 
-class DetectionCsv(DetectionBase):
+class TechniqueCsv(TechniqueBase):
     """
     Import data from a CSV file, formatted TechniqueId,UseCase
     """
@@ -100,7 +100,7 @@ class DetectionCsv(DetectionBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
-        DetectionBase.set_plugin_params(parser)
+        TechniqueBase.set_plugin_params(parser)
 
         parser.add_argument('--file', help='Path of the csv file to import', required=True)
 
@@ -122,7 +122,7 @@ class DetectionCsv(DetectionBase):
             yield technique, use_case
 
 
-class DetectionExcel(DetectionBase):
+class TechniqueExcel(TechniqueBase):
     """
     Import data from an Excel file, having a worksheet with two columns: TechniqueId and UseCase
     """
@@ -138,7 +138,7 @@ class DetectionExcel(DetectionBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
-        DetectionBase.set_plugin_params(parser)
+        TechniqueBase.set_plugin_params(parser)
 
         parser.add_argument('--file', help='Path of the Excel file to import', required=True)
 
@@ -161,7 +161,7 @@ class DetectionExcel(DetectionBase):
                 yield technique.strip(), detection
 
 
-class DetectionAzureAuthBase(DetectionBase):
+class TechniqueAzureAuthBase(TechniqueBase):
     """
     Base class for import plugins that authenticate against Azure AD
     """
@@ -185,7 +185,7 @@ class DetectionAzureAuthBase(DetectionBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
-        DetectionBase.set_plugin_params(parser)
+        TechniqueBase.set_plugin_params(parser)
 
         parser.add_argument('--app_id', help='Azure application id', required=True)
         parser.add_argument('--tenant_id', help='Azure tenant id', required=True)
@@ -205,7 +205,7 @@ class DetectionAzureAuthBase(DetectionBase):
             return Azure.connect_device_flow(self._app_id, self._tenant_id, endpoint)
 
 
-class DetectionSentinelAlertRules(DetectionAzureAuthBase):
+class TechniqueSentinelAlertRules(TechniqueAzureAuthBase):
     """
     Import Analytics Rules from the Sentinel API
     """
@@ -233,7 +233,7 @@ class DetectionSentinelAlertRules(DetectionAzureAuthBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
-        DetectionAzureAuthBase.set_plugin_params(parser)
+        TechniqueAzureAuthBase.set_plugin_params(parser)
 
         parser.add_argument('--subscription_id', help='Azure subscription id for Sentinel', required=True)
         parser.add_argument('--resource_group', help='Azure resource group for Sentinel', required=True)
@@ -284,7 +284,7 @@ class DetectionSentinelAlertRules(DetectionAzureAuthBase):
         return result
 
 
-class DetectionDefenderIdentityRules(DetectionBase):
+class TechniqueDefenderIdentityRules(TechniqueBase):
     """
     Import rules for Microsoft Defender for Identity from their Github webpage:
     https://github.com/MicrosoftDocs/ATADocs/tree/master/ATPDocs
@@ -307,7 +307,7 @@ class DetectionDefenderIdentityRules(DetectionBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
-        DetectionBase.set_plugin_params(parser)
+        TechniqueBase.set_plugin_params(parser)
 
     def get_data_from_source(self) -> Iterable:
         """
@@ -351,7 +351,7 @@ class DetectionDefenderIdentityRules(DetectionBase):
                             current_detection = None
 
 
-class DetectionDefenderAlerts(DetectionAzureAuthBase):
+class TechniqueDefenderAlerts(TechniqueAzureAuthBase):
     """
     Import alerts and techniques from the Microsft Defender API.
     """
@@ -412,7 +412,7 @@ class DetectionDefenderAlerts(DetectionAzureAuthBase):
         return result
 
 
-class DetectionTaniumSignals(DetectionBase):
+class TechniqueTaniumSignals(TechniqueBase):
     """
     Class for importing signals with ATT&CK technique mapping from Tanium.
     """
@@ -443,7 +443,7 @@ class DetectionTaniumSignals(DetectionBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
-        DetectionBase.set_plugin_params(parser)
+        TechniqueBase.set_plugin_params(parser)
 
         parser.add_argument('--host', help='Tanium host', required=True)
         parser.add_argument('--user', help='Tanium API username', required=True)
@@ -479,7 +479,7 @@ class DetectionTaniumSignals(DetectionBase):
             raise Exception(f'DetectionTaniumSignals: get all signals failed: {r.text}')
 
 
-class DetectionElasticSecurityRules(DetectionBase):
+class TechniqueElasticSecurityRules(TechniqueBase):
     """
     Class for importing Elastic Security rules with ATT&CK technique mapping.
     """
@@ -505,7 +505,7 @@ class DetectionElasticSecurityRules(DetectionBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
-        DetectionBase.set_plugin_params(parser)
+        TechniqueBase.set_plugin_params(parser)
 
         parser.add_argument('--host', help='Elastic Security host', required=True)
         parser.add_argument('--user', help='Elastic Security username', required=True)
@@ -546,7 +546,7 @@ class DetectionElasticSecurityRules(DetectionBase):
             raise Exception(f'DetectionElasticSecurityRules: get all rules failed: {r.text}')
 
 
-class DetectionSuricataRules(DetectionBase):
+class TechniqueSuricataRules(TechniqueBase):
     """
     Import data from a Suricata rules file. It expects a metadata meta-setting containing a field with the name
     mitre_technique_id containing the ATT&CK technique ID.
@@ -572,7 +572,7 @@ class DetectionSuricataRules(DetectionBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
-        DetectionBase.set_plugin_params(parser)
+        TechniqueBase.set_plugin_params(parser)
 
         parser.add_argument('--file', help='Path of the Suricate rules file to import', required=True)
 
@@ -607,7 +607,7 @@ class DetectionSuricataRules(DetectionBase):
         return meta_data_dict
 
 
-class DetectionSigmaRules(DetectionBase):
+class TechniqueSigmaRules(TechniqueBase):
     """
     Import data from a folder with Sigma rules.
     """
@@ -623,7 +623,7 @@ class DetectionSigmaRules(DetectionBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
-        DetectionBase.set_plugin_params(parser)
+        TechniqueBase.set_plugin_params(parser)
 
         parser.add_argument('--folder', help='Path of the folder with Sigma rules to import', required=True)
 
@@ -658,7 +658,7 @@ class DetectionSigmaRules(DetectionBase):
                                 yield tag[7:].upper(), yaml_content['title']
 
 
-class DetectionSplunkConfigSearches(DetectionBase):
+class TechniqueSplunkConfigSearches(TechniqueBase):
     """
     Import data from a Splunk config that contains saved searches (savedsearches.conf). It uses
     the action.correlationsearch.annotations attribute to get the mitre_attack techniques:
@@ -679,7 +679,7 @@ class DetectionSplunkConfigSearches(DetectionBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
-        DetectionBase.set_plugin_params(parser)
+        TechniqueBase.set_plugin_params(parser)
 
         parser.add_argument('--file', help='Path of the savedsearches config file to import', required=True)
 

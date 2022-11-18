@@ -14,7 +14,7 @@ import os
 import importlib
 import inspect
 from dettectinator import DettectTechniquesAdministration, DettectDataSourcesAdministration
-from plugins.detection_import import DetectionBase
+from plugins.technique_import import TechniqueBase
 from plugins.datasources_import import DatasourceBase
 from argparse import ArgumentParser, Namespace
 
@@ -58,7 +58,7 @@ class CommandLine:
         for module in [x for x in os.listdir(path) if x[-3:] == '.py']:
             plugin_mod = importlib.import_module('plugins.' + module[:-3])
             for name, cls in inspect.getmembers(plugin_mod, inspect.isclass):
-                if ('Detection' in name or 'Datasource' in name) and 'Base' not in name:
+                if ('Technique' in name or 'Datasource' in name) and 'Base' not in name:
                     import_plugins[name] = plugin_mod
         return import_plugins
 
@@ -102,7 +102,7 @@ class CommandLine:
         return config_file_arguments
 
     @staticmethod
-    def process_techniques(applicable_to: list, arguments: Namespace, plugin: DetectionBase) -> tuple:
+    def process_techniques(applicable_to: list, arguments: Namespace, plugin: TechniqueBase) -> tuple:
         """
         Process all techiques from the source system
         """
@@ -149,7 +149,7 @@ class CommandLine:
                 print(f'Plugin "{plugin_name}" has been found.')
             else:
                 print(f'data import plugin "{plugin_name}" does not exist. Valid plugins:')
-                print_plugins(plugins)
+                self._print_plugins(plugins)
                 sys.exit()
 
             # Add the default command line params
@@ -176,7 +176,7 @@ class CommandLine:
             print(f'Using "{plugin_name}" to collect data.')
             plugin = plugin_class(vars(arguments))
 
-            if plugin_name.startswith('Detection'):
+            if plugin_name.startswith('Technique'):
                 dettect, results, warnings = self.process_techniques(applicable_to, arguments, plugin)
             else:
                 dettect, results, warnings = self.process_datasource(applicable_to, arguments, plugin)

@@ -16,69 +16,69 @@ import argparse
 try:
     # When dettectinator is installed as python library
     from dettectinator import DettectTechniquesAdministration, DettectDataSourcesAdministration
-    from dettectinator.plugins.detection_import import DetectionCsv, DetectionTaniumSignals, DetectionDefenderAlerts, DetectionSentinelAlertRules
+    from dettectinator.plugins.technique_import import TechniqueCsv, TechniqueTaniumSignals, TechniqueDefenderAlerts, TechniqueSentinelAlertRules
     from plugins.datasources_import import DatasourceDefenderEndpoints
 except ModuleNotFoundError:
     # When dettectinator is not installed as python library
     sys.path.append(os.path.dirname(os.path.abspath(__file__).replace('examples', 'dettectinator')))
     from dettectinator import DettectTechniquesAdministration, DettectDataSourcesAdministration
-    from plugins.detection_import import DetectionCsv, DetectionTaniumSignals, DetectionDefenderAlerts, DetectionSentinelAlertRules
+    from plugins.technique_import import TechniqueCsv, TechniqueTaniumSignals, TechniqueDefenderAlerts, TechniqueSentinelAlertRules
     from plugins.datasources_import import DatasourceDefenderEndpoints
 
 
-def test_file(local_stix_path: str):
+def test_techniques_file(local_stix_path: str):
     """
     Tests an import via ImportCsv plugin.
     """
     parameters = {'file': 'import.csv'}
-    import_csv = DetectionCsv(parameters)
-    use_cases = import_csv.get_attack_techniques(['test'], 'Test')
-    print(json.dumps(use_cases, indent=4))
+    import_csv = TechniqueCsv(parameters)
+    techniques = import_csv.get_attack_techniques(['test'], 'Test')
+    print(json.dumps(techniques, indent=4))
 
     dettect = DettectTechniquesAdministration(local_stix_path=local_stix_path)
-    dettect.update_detections(use_cases, False, False, '', False, False)
+    dettect.update_detections(techniques, False, False, '', False, False)
     dettect.save_yaml_file('techniques_import_file.yaml')
 
 
-def test_defender(local_stix_path: str):
+def test_techniques_defender(local_stix_path: str):
     """
     Tests an import via ImportDefenderAlerts plugin.
     """
     parameters = {'app_id': '', 'tenant_id': ''}
-    import_defender = DetectionDefenderAlerts(parameters)
-    use_cases = import_defender.get_attack_techniques(['test'], 'MD')
-    print(json.dumps(use_cases, indent=4))
+    import_defender = TechniqueDefenderAlerts(parameters)
+    techniques = import_defender.get_attack_techniques(['test'], 'MD')
+    print(json.dumps(techniques, indent=4))
 
     dettect = DettectTechniquesAdministration(local_stix_path=local_stix_path)
-    dettect.update_detections(use_cases, False, False, '', False, False)
+    dettect.update_detections(techniques, False, False, '', False, False)
     dettect.save_yaml_file('techniques_import_defender.yaml')
 
 
-def test_tanium(local_stix_path: str):
+def test_techniques_tanium(local_stix_path: str):
     """
     Tests an import via ImportTaniumSignals plugin.
     """
     parameters = {'host': '', 'user': '', 'password': '', 'search_prefix': ''}
-    import_tanium = DetectionTaniumSignals(parameters)
-    use_cases = import_tanium.get_attack_techniques(['all'], 'Tanium')
-    print(json.dumps(use_cases, indent=4))
+    import_tanium = TechniqueTaniumSignals(parameters)
+    techniques = import_tanium.get_attack_techniques(['all'], 'Tanium')
+    print(json.dumps(techniques, indent=4))
 
     dettect = DettectTechniquesAdministration(local_stix_path=local_stix_path)
-    dettect.update_detections(use_cases, False, False, '', False, False)
+    dettect.update_detections(techniques, False, False, '', False, False)
     dettect.save_yaml_file('techniques_import_tanium.yaml')
 
 
-def test_sentinel(local_stix_path: str):
+def test_techniques_sentinel(local_stix_path: str):
     """
     Tests an import via ImportSentinelAlertRules plugin.
     """
     parameters = {'app_id': '', 'tenant_id': '', 'subscription_id': '', 'resource_group': '', 'workspace': ''}
-    import_sentinel = DetectionSentinelAlertRules(parameters)
-    use_cases = import_sentinel.get_attack_techniques(['test'], 'test')
-    print(json.dumps(use_cases, indent=4))
+    import_sentinel = TechniqueSentinelAlertRules(parameters)
+    techniques = import_sentinel.get_attack_techniques(['test'], 'test')
+    print(json.dumps(techniques, indent=4))
 
     dettect = DettectTechniquesAdministration(local_stix_path=local_stix_path)
-    dettect.update_detections(use_cases, False, False, '', False, False)
+    dettect.update_detections(techniques, False, False, '', False, False)
     dettect.save_yaml_file('techniques_import_sentinel.yaml')
 
 
@@ -100,8 +100,8 @@ if __name__ == '__main__':
     args = menu_parser.parse_args()
     arg_local_stix_path = args.local_stix_path
 
-    # test_file(arg_local_stix_path)
-    # test_defender(arg_local_stix_path)
-    # test_tanium(arg_local_stix_path)
-    # test_sentinel(arg_local_stix_path)
+    # test_technique_importfile(arg_local_stix_path)
+    # test_technique_importdefender(arg_local_stix_path)
+    # test_technique_importtanium(arg_local_stix_path)
+    # test_technique_importsentinel(arg_local_stix_path)
     test_datasources_mde(arg_local_stix_path)
