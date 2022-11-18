@@ -8,7 +8,10 @@ License: GPL-3.0 License
 
 from argparse import ArgumentParser
 from collections.abc import Iterable
+from xml.etree.ElementTree import Element
+
 import json
+import xml.etree.ElementTree as ElementTree
 
 
 class DatasourceBase:
@@ -102,7 +105,7 @@ class DatasourceOssemBase(DatasourceBase):
         data = pandas.read_csv(url)
         data.where(data['Log Source'] == self._log_source, inplace=True)
         data.dropna(how='all', inplace=True)
-        select = data[['Data Source', 'Component', 'EventID', 'Event Name', 'Filter in Log']]
+        select = data[['Data Source', 'Component', 'EventID', 'Event Name', 'Filter in Log', 'Audit Category']]
         dict_result = select.to_dict(orient="records")
         return dict_result
 
@@ -138,3 +141,55 @@ class DatasourceDefenderEndpoints(DatasourceOssemBase):
                     yield str(record['Component']).title(), f'{record ["Event Name"]}: {action_type["ActionType"]}'
             else:
                 yield str(record['Component']).title(), record['Event Name']
+
+
+class DatasourceWindowsSysmon(DatasourceOssemBase):
+    """
+    Base class for importing use-case/technique data
+    """
+
+    def __init__(self, parameters: dict) -> None:
+        super().__init__(parameters)
+
+        if 'sysmon_config' not in self._parameters:
+            raise Exception('DatasourceWindowsSysmon: "sysmon_config" parameter is required.')
+
+        self._sysmon_config = parameters['sysmon_config']
+        self._log_source = 'Microsoft-Windows-Sysmon'
+
+    @staticmethod
+    def set_plugin_params(parser: ArgumentParser) -> None:
+        """
+        Set command line arguments specific for the plugin
+        :param parser: Argument parser
+        """
+        parser.add_argument('--sysmon_config', help='Path of the Sysmon config file.', required=True)
+
+    def get_data_from_source(self) -> Iterable:
+        """
+        Gets the datasource/product data from the source.
+        :return: Iterable, yields technique, detection
+        """
+        ossem_data = self._get_ossem_data()
+        sysmon_config = self._get_sysmon_config()
+
+        for record in ossem_data:
+            config_items = sysmon_config.findall(f'.//{record["Audit Category"]}')
+
+            # Event type is not found in the config, which means that there is no filtering
+            if len(config_items) == 0:
+                yield str(record['Component']).title(), f'{record["EventID"]}: {record["Event Name"]}'
+                continue
+
+            for config_item in config_items:
+                if config_item.attrib['onmatch'] == "include" and len(config_item.getchildren()) > 0:
+                    # There is an include attribute in the config with sub elements, which means there is logging
+                    yield str(record['Component']).title(), f'{record["EventID"]}: {record["Event Name"]}'
+
+    def _get_sysmon_config(self) -> Element:
+        """
+        Gets the Sysmon config from the filesystem
+        """
+        tree = ElementTree.parse(self._sysmon_config)
+        root = tree.getroot()
+        return root

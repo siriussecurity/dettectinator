@@ -92,7 +92,7 @@ class DetectionCsv(DetectionBase):
     def __init__(self, parameters: dict) -> None:
         super().__init__(parameters)
         if 'file' not in self._parameters:
-            raise Exception('ImportCsv: "file" parameter is required.')
+            raise Exception('DetectionCsv: "file" parameter is required.')
 
     @staticmethod
     def set_plugin_params(parser: ArgumentParser) -> None:
@@ -130,7 +130,7 @@ class DetectionExcel(DetectionBase):
     def __init__(self, parameters: dict) -> None:
         super().__init__(parameters)
         if 'file' not in self._parameters:
-            raise Exception('ImportExcel: "file" parameter is required.')
+            raise Exception('DetectionExcel: "file" parameter is required.')
 
     @staticmethod
     def set_plugin_params(parser: ArgumentParser) -> None:
@@ -214,13 +214,13 @@ class DetectionSentinelAlertRules(DetectionAzureAuthBase):
         super().__init__(parameters)
 
         if 'subscription_id' not in self._parameters:
-            raise Exception('ImportSentinelAlertRules: "subscription_id" parameter is required.')
+            raise Exception('DetectionSentinelAlertRules: "subscription_id" parameter is required.')
 
         if 'resource_group' not in self._parameters:
-            raise Exception('ImportSentinelAlertRules: "resource_group" parameter is required.')
+            raise Exception('DetectionSentinelAlertRules: "resource_group" parameter is required.')
 
         if 'workspace' not in self._parameters:
-            raise Exception('ImportSentinelAlertRules: "workspace" parameter is required.')
+            raise Exception('DetectionSentinelAlertRules: "workspace" parameter is required.')
 
         self._subscription_id = self._parameters['subscription_id']
         self._resource_group = self._parameters['resource_group']
@@ -275,7 +275,7 @@ class DetectionSentinelAlertRules(DetectionAzureAuthBase):
         if response.status_code != requests.codes['ok']:
             # Raise an exception to handle hitting API limits
             if response.status_code == requests.codes['too_many_requests']:
-                raise ConnectionRefusedError('ImportSentinelAlerts: You have likely hit the API limit. ')
+                raise ConnectionRefusedError('DetectionSentinelAlerts: You have likely hit the API limit. ')
             response.raise_for_status()
 
         json_response = response.json()
@@ -403,7 +403,7 @@ class DetectionDefenderAlerts(DetectionAzureAuthBase):
         if response.status_code != requests.codes['ok']:
             # Raise an exception to handle hitting API limits
             if response.status_code == requests.codes['too_many_requests']:
-                raise ConnectionRefusedError('ImportDefenderAlerts: You have likely hit the API limit. ')
+                raise ConnectionRefusedError('DetectionDefenderAlerts: You have likely hit the API limit. ')
             response.raise_for_status()
 
         json_response = response.json()
@@ -420,13 +420,13 @@ class DetectionTaniumSignals(DetectionBase):
         super().__init__(parameters)
 
         if 'host' not in self._parameters:
-            raise Exception('ImportTaniumSignals: "host" parameter is required.')
+            raise Exception('DetectionTaniumSignals: "host" parameter is required.')
         if 'user' not in self._parameters:
-            raise Exception('ImportTaniumSignals: "user" parameter is required.')
+            raise Exception('DetectionTaniumSignals: "user" parameter is required.')
         if 'password' not in self._parameters:
-            raise Exception('ImportTaniumSignals: "password" parameter is required.')
+            raise Exception('DetectionTaniumSignals: "password" parameter is required.')
         if 'search_prefix' not in self._parameters:
-            raise Exception('ImportTaniumSignals: "search_prefix" parameter is required.')
+            raise Exception('DetectionTaniumSignals: "search_prefix" parameter is required.')
 
         self._host = self._parameters['host']
         self._user = self._parameters['user']
@@ -476,7 +476,7 @@ class DetectionTaniumSignals(DetectionBase):
         if r.status_code == requests.codes.ok:
             return r.json()
         else:
-            raise Exception(f'ImportTaniumSignals: get all signals failed: {r.text}')
+            raise Exception(f'DetectionTaniumSignals: get all signals failed: {r.text}')
 
 
 class DetectionElasticSecurityRules(DetectionBase):
@@ -487,11 +487,11 @@ class DetectionElasticSecurityRules(DetectionBase):
         super().__init__(parameters)
 
         if 'host' not in self._parameters:
-            raise Exception('ImportElasticSecurityRules: "host" parameter is required.')
+            raise Exception('DetectionElasticSecurityRules: "host" parameter is required.')
         if 'user' not in self._parameters:
-            raise Exception('ImportElasticSecurityRules: "user" parameter is required.')
+            raise Exception('DetectionElasticSecurityRules: "user" parameter is required.')
         if 'password' not in self._parameters:
-            raise Exception('ImportElasticSecurityRules: "password" parameter is required.')
+            raise Exception('DetectionElasticSecurityRules: "password" parameter is required.')
 
         self._host = self._parameters['host']
         self._user = self._parameters['user']
@@ -543,7 +543,7 @@ class DetectionElasticSecurityRules(DetectionBase):
         if r.status_code == requests.codes.ok:
             return r.json()
         else:
-            raise Exception(f'ImportElasticSecurityRules: get all rules failed: {r.text}')
+            raise Exception(f'DetectionElasticSecurityRules: get all rules failed: {r.text}')
 
 
 class DetectionSuricataRules(DetectionBase):
@@ -564,7 +564,7 @@ class DetectionSuricataRules(DetectionBase):
     def __init__(self, parameters: dict) -> None:
         super().__init__(parameters)
         if 'file' not in self._parameters:
-            raise Exception('ImportSuricateRules: "file" parameter is required.')
+            raise Exception('DetectionSuricateRules: "file" parameter is required.')
 
     @staticmethod
     def set_plugin_params(parser: ArgumentParser) -> None:
@@ -615,7 +615,7 @@ class DetectionSigmaRules(DetectionBase):
     def __init__(self, parameters: dict) -> None:
         super().__init__(parameters)
         if 'folder' not in self._parameters:
-            raise Exception('ImportSigmaRules: "folder" parameter is required.')
+            raise Exception('DetectionSigmaRules: "folder" parameter is required.')
 
     @staticmethod
     def set_plugin_params(parser: ArgumentParser) -> None:
@@ -671,7 +671,7 @@ class DetectionSplunkConfigSearches(DetectionBase):
     def __init__(self, parameters: dict) -> None:
         super().__init__(parameters)
         if 'file' not in self._parameters:
-            raise Exception('ImportSplunkConfigSearches: "file" parameter is required.')
+            raise Exception('DetectionSplunkConfigSearches: "file" parameter is required.')
 
     @staticmethod
     def set_plugin_params(parser: ArgumentParser) -> None:
