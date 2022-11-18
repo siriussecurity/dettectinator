@@ -45,12 +45,13 @@ class DetectionBase:
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
-        raise NotImplementedError()
+        parser.add_argument('-l', '--location_prefix',
+                            help='Location of the detection, will be prepended to the detection name.', default='')
 
     def get_attack_techniques(self, applicable_to: list, location_prefix: str) -> dict:
         """
         Retrieves use-case/technique data from a data source
-        :param applicable_to: Systems that the detections are applicable to.
+        :param applicable_to: Systems that the detections are applicable to
         :param location_prefix: Location of the detection, will be prepended to the detection name.
         :return: Dictionary, example: {'Detection A': {'applicable_to': ['all'], 'location_prefix': 'SIEM', 'techniques': ['T1055']}}
         """
@@ -58,11 +59,11 @@ class DetectionBase:
         use_cases = {}
 
         for technique, use_case in self.get_data_from_source():
-            # Exclude all detections that match the exclude pattern
+            # Exclude all detections that match the exclude-pattern
             if self._re_exclude and not re.match(self._re_exclude, use_case) is None:
                 continue
 
-            # Include all detections that match the include pattern
+            # Include all detections that match the include-pattern
             if self._re_include and re.match(self._re_include, use_case) is None:
                 continue
 
@@ -99,6 +100,8 @@ class DetectionCsv(DetectionBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
+        DetectionBase.set_plugin_params(parser)
+
         parser.add_argument('--file', help='Path of the csv file to import', required=True)
 
     def get_data_from_source(self) -> Iterable:
@@ -135,6 +138,8 @@ class DetectionExcel(DetectionBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
+        DetectionBase.set_plugin_params(parser)
+
         parser.add_argument('--file', help='Path of the Excel file to import', required=True)
 
     def get_data_from_source(self) -> Iterable:
@@ -180,6 +185,8 @@ class DetectionAzureAuthBase(DetectionBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
+        DetectionBase.set_plugin_params(parser)
+
         parser.add_argument('--app_id', help='Azure application id', required=True)
         parser.add_argument('--tenant_id', help='Azure tenant id', required=True)
         parser.add_argument('--secret', help='Azure client secret')
@@ -300,7 +307,7 @@ class DetectionDefenderIdentityRules(DetectionBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
-        pass
+        DetectionBase.set_plugin_params(parser)
 
     def get_data_from_source(self) -> Iterable:
         """
@@ -436,6 +443,8 @@ class DetectionTaniumSignals(DetectionBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
+        DetectionBase.set_plugin_params(parser)
+
         parser.add_argument('--host', help='Tanium host', required=True)
         parser.add_argument('--user', help='Tanium API username', required=True)
         parser.add_argument('--password', help='Tanium API password', required=True)
@@ -496,6 +505,8 @@ class DetectionElasticSecurityRules(DetectionBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
+        DetectionBase.set_plugin_params(parser)
+
         parser.add_argument('--host', help='Elastic Security host', required=True)
         parser.add_argument('--user', help='Elastic Security username', required=True)
         parser.add_argument('--password', help='Elastic Security password', required=True)
@@ -561,6 +572,8 @@ class DetectionSuricataRules(DetectionBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
+        DetectionBase.set_plugin_params(parser)
+
         parser.add_argument('--file', help='Path of the Suricate rules file to import', required=True)
 
     def get_data_from_source(self) -> Iterable:
@@ -582,7 +595,8 @@ class DetectionSuricataRules(DetectionBase):
                         if 'mitre_technique_id' in meta_data.keys():
                             yield meta_data['mitre_technique_id'], rule.msg
 
-    def _convert_metadata_list_to_dict(self, meta_data: list) -> dict:
+    @staticmethod
+    def _convert_metadata_list_to_dict(meta_data: list) -> dict:
         """
         Converts a list with "key<space>value" into a dictionary.
         """
@@ -609,6 +623,8 @@ class DetectionSigmaRules(DetectionBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
+        DetectionBase.set_plugin_params(parser)
+
         parser.add_argument('--folder', help='Path of the folder with Sigma rules to import', required=True)
 
     def get_data_from_source(self) -> Iterable:
@@ -649,7 +665,7 @@ class DetectionSplunkConfigSearches(DetectionBase):
 
     action.correlationsearch.annotations = {"mitre_attack": ["T1560.001", "T1560"]}
 
-    Searches that contain a action.correlationsearch.label and don't have disabled=1 are included.
+    Searches that contain an action.correlationsearch.label and don't have disabled=1 are included.
     """
 
     def __init__(self, parameters: dict) -> None:
@@ -663,6 +679,8 @@ class DetectionSplunkConfigSearches(DetectionBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
+        DetectionBase.set_plugin_params(parser)
+
         parser.add_argument('--file', help='Path of the savedsearches config file to import', required=True)
 
     def get_data_from_source(self) -> Iterable:
@@ -674,14 +692,14 @@ class DetectionSplunkConfigSearches(DetectionBase):
         print(f'Reading data from "{file}"')
 
         import addonfactory_splunk_conf_parser_lib as splunk_conf_parser
-        splunk_config = None
+
         with open(file, "r") as f:
             splunk_config = splunk_conf_parser.TABConfigParser()
             splunk_config.read_file(f)
 
-        IGNORE_LIST = ['default']
+        ignore_list = ['default']
         for section in splunk_config.sections():
-            if splunk_config[section].name in IGNORE_LIST \
+            if splunk_config[section].name in ignore_list \
                or 'action.correlationsearch.label' not in splunk_config[section].keys() \
                or 'action.correlationsearch.annotations' not in splunk_config[section].keys() \
                or ('disabled' in splunk_config[section].keys() and splunk_config[section]['disabled'] == '1'):

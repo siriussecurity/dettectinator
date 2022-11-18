@@ -86,7 +86,7 @@ def test_datasources_mde(local_stix_path: str):
 
     parameters = {}
     import_datasources_mde = DatasourceDefenderEndpoints(parameters)
-    datasources = import_datasources_mde.get_attack_data_sources(['test'])
+    datasources = import_datasources_mde.get_attack_datasources(['test'])
     print(json.dumps(datasources, indent=4))
 
     dettect = DettectDataSourcesAdministration(local_stix_path=local_stix_path)

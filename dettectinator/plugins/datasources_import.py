@@ -30,7 +30,7 @@ class DatasourceBase:
         """
         raise NotImplementedError()
 
-    def get_attack_data_sources(self, applicable_to: list) -> dict:
+    def get_attack_datasources(self, applicable_to: list) -> dict:
         """
         Retrieves datasource/product data from a data source
         :param applicable_to: Systems that the datasources are applicable to.
