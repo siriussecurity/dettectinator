@@ -22,6 +22,7 @@ from ruamel.yaml import YAML
 from attackcti import attack_client
 from requests import exceptions
 from stix2 import datastore, Filter
+from anyascii import anyascii
 import dateutil.parser
 
 
@@ -123,7 +124,7 @@ class DettectBase(object):
                 # Date fix for compatability with YAML Editor (which uses JavaScript to generate YAML):
                 if 'date' in line:
                     line = line.replace('T00:00:00Z', 'T00:00:00.000Z').replace(' 00:00:00', 'T00:00:00.000Z')
-                yaml_file.write(line)
+                yaml_file.write(anyascii(line))
             self.filename = filename if filename else self.filename
 
     @staticmethod
