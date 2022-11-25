@@ -29,7 +29,7 @@ setuptools.setup(
     install_requires=["requests", "ruamel.yaml", "attackcti", "python-dateutil", "msal", "stix2", "openpyxl", "suricataparser", "addonfactory-splunk-conf-parser-lib"],
     license='GPL3',
     classifiers=[
-        'Development Status :: 2 - Pre-Alpha',
+        'Development Status :: 5 - Production/Stable',
         'Operating System :: OS Independent',
         'Topic :: Security',
         'License :: OSI Approved :: GNU General Public License v3 (GPLv3)',
