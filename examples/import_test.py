@@ -28,7 +28,7 @@ except ModuleNotFoundError:
 
 def test_techniques_file(local_stix_path: str):
     """
-    Tests an import via ImportCsv plugin.
+    Tests an import via TechniqueCsv plugin.
     """
     parameters = {'file': 'import.csv'}
     import_csv = TechniqueCsv(parameters)
@@ -42,7 +42,7 @@ def test_techniques_file(local_stix_path: str):
 
 def test_techniques_defender(local_stix_path: str):
     """
-    Tests an import via ImportDefenderAlerts plugin.
+    Tests an import via TechniqueDefenderAlerts plugin.
     """
     parameters = {'app_id': '', 'tenant_id': ''}
     import_defender = TechniqueDefenderAlerts(parameters)
@@ -56,7 +56,7 @@ def test_techniques_defender(local_stix_path: str):
 
 def test_techniques_tanium(local_stix_path: str):
     """
-    Tests an import via ImportTaniumSignals plugin.
+    Tests an import via TechniqueTaniumSignals plugin.
     """
     parameters = {'host': '', 'user': '', 'password': '', 'search_prefix': ''}
     import_tanium = TechniqueTaniumSignals(parameters)
@@ -70,7 +70,7 @@ def test_techniques_tanium(local_stix_path: str):
 
 def test_techniques_sentinel(local_stix_path: str):
     """
-    Tests an import via ImportSentinelAlertRules plugin.
+    Tests an import via TechniqueSentinelAlertRules plugin.
     """
     parameters = {'app_id': '', 'tenant_id': '', 'subscription_id': '', 'resource_group': '', 'workspace': ''}
     import_sentinel = TechniqueSentinelAlertRules(parameters)
@@ -83,7 +83,9 @@ def test_techniques_sentinel(local_stix_path: str):
 
 
 def test_datasources_mde(local_stix_path: str):
-
+    """
+    Tests an import via DatasourceDefenderEndpoints plugin.
+    """
     parameters = {}
     import_datasources_mde = DatasourceDefenderEndpoints(parameters)
     datasources = import_datasources_mde.get_attack_datasources(['test'])
