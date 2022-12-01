@@ -10,6 +10,8 @@ import json
 import xml.etree.ElementTree as ElementTree
 import requests
 import re
+import sys
+import os
 
 from argparse import ArgumentParser
 from collections.abc import Iterable
