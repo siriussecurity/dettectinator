@@ -9,9 +9,11 @@ License: GPL-3.0 License
 from argparse import ArgumentParser
 from collections.abc import Iterable
 from xml.etree.ElementTree import Element
+from plugins.support.authentication import Azure
 
 import json
 import xml.etree.ElementTree as ElementTree
+import requests
 
 
 class DatasourceBase:
@@ -176,13 +178,15 @@ class DatasourceWindowsSysmon(DatasourceOssemBase):
         for record in ossem_data:
             config_items = sysmon_config.findall(f'.//{record["Audit Category"]}')
 
-            # If the is an event type with an onmatch == include attribute without child items this means
+            # If this is an event type with an onmatch == include attribute without child items this means
             # that nothing is being logged for this event type
             for config_item in config_items:
                 if config_item.attrib['onmatch'] == "include" and len(config_item.getchildren()) == 0:
                     continue
 
-            yield str(record['Component']).title(), f'{record["EventID"]}: {record["Event Name"]}'
+            data_source = str(record['Component']).title()
+            product = f'{record["EventID"]}: {record["Event Name"]}'
+            yield data_source, product
 
     def _get_sysmon_config(self) -> Element:
         """
@@ -191,3 +195,104 @@ class DatasourceWindowsSysmon(DatasourceOssemBase):
         tree = ElementTree.parse(self._sysmon_config)
         root = tree.getroot()
         return root
+
+
+class DatasourceWindowsSecurityAuditing(DatasourceOssemBase):
+    """
+    Base class for importing use-case/technique data
+    """
+
+    def __init__(self, parameters: dict) -> None:
+        super().__init__(parameters)
+
+        if 'app_id' not in self._parameters:
+            raise Exception(f'{self.__class__.__name__}: "app_id" parameter is required.')
+
+        if 'tenant_id' not in self._parameters:
+            raise Exception(f'{self.__class__.__name__}: "tenant_id" parameter is required.')
+
+        if 'workspace_id' not in self._parameters:
+            raise Exception(f'{self.__class__.__name__}: "workspace_id" parameter is required.')
+
+        self._app_id = self._parameters['app_id']
+        self._tenant_id = self._parameters['tenant_id']
+        self._workspace_id = self._parameters['workspace_id']
+        self._secret = self._parameters.get('secret', None)
+        self._endpoint = 'https://api.loganalytics.io'
+
+    @staticmethod
+    def set_plugin_params(parser: ArgumentParser) -> None:
+        """
+        Set command line arguments specific for the plugin
+        :param parser: Argument parser
+        """
+        parser.add_argument('--app_id', help='Azure application id', required=True)
+        parser.add_argument('--tenant_id', help='Azure tenant id', required=True)
+        parser.add_argument('--workspace_id', help='Azure Sentinel workspace id', required=True)
+        parser.add_argument('--secret', help='Azure client secret')
+
+    def _connect_to_azure(self, endpoint: str) -> str:
+        if self._secret:
+            return Azure.connect_client_secret(self._app_id, self._tenant_id, endpoint, self._secret)
+        else:
+            return Azure.connect_device_flow(self._app_id, self._tenant_id, endpoint)
+
+    def get_data_from_source(self) -> Iterable:
+        """
+        Gets the datasource/product data from the source.
+        :return: Iterable, yields technique, detection
+        """
+        access_token = self._connect_to_azure(self._endpoint)
+        sentinel_data = self._get_sentinel_data(access_token)
+
+        for record in sentinel_data:
+            data_source = record[0].title()
+            product = record[1]
+            yield data_source, product
+
+    def _get_sentinel_data(self, access_token: str) -> list:
+        """
+        Execute a query on Advanced Hunting to retrieve the use-case/technique data
+        :param access_token: JWT token to execute the request on the backend
+        :return: Dictionary containing the results
+        """
+        url = f'{self._endpoint}/v1/workspaces/{self._workspace_id}/query'
+
+        headers = {
+            'Content-Type': 'application/json',
+            'Accept': 'application/json',
+            'Authorization': 'Bearer ' + access_token
+        }
+
+        query = '''
+        let mapping_table = externaldata(DataSource:string,Component:string,Source:string,Relationship:string,Target:string, OSSEMID:string, EventID:int,EventName:string,EventPlatform:string, LogSource:string, FilterInLog:string,AuditCategory:string,AuditSubCategory:string, Channel:string, EnableCommands:string,GPOAuditPolicy:string)
+        [
+            h@"https://raw.githubusercontent.com/OTRF/OSSEM-DM/main/use-cases/mitre_attack/attack_events_mapping.csv"
+        ]
+        with(format="csv")
+        | where LogSource == "Microsoft-Windows-Security-Auditing";
+        // Get the event id's from the Windows Security Log and join this with the mapping table
+        SecurityEvent
+        | where TimeGenerated >= ago(30d)
+        | where EventSourceName == "Microsoft-Windows-Security-Auditing"
+        | distinct EventID
+        | join kind = inner mapping_table on EventID
+        // Get the distinct data sources
+        | project  DataSource = Component, Product = strcat("Microsoft-Windows-Security-Auditing: ", tostring(EventID))
+        | distinct DataSource, Product
+        '''
+
+        data = json.dumps({'query': query}).encode('utf-8')
+
+        response = requests.post(url=url, headers=headers, data=data)
+
+        if response.status_code != requests.codes['ok']:
+            # Raise an exception to handle hitting API limits
+            if response.status_code == requests.codes['too_many_requests']:
+                raise ConnectionRefusedError('DetectionSentinelAlerts: You have likely hit the API limit. ')
+            response.raise_for_status()
+
+        json_response = response.json()
+        result = json_response['tables'][0]['rows']
+
+        return result
