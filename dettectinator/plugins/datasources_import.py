@@ -6,14 +6,22 @@ Authors:
 License: GPL-3.0 License
 """
 
-from argparse import ArgumentParser
-from collections.abc import Iterable
-from xml.etree.ElementTree import Element
-from plugins.support.authentication import Azure
-
 import json
 import xml.etree.ElementTree as ElementTree
 import requests
+import re
+
+from argparse import ArgumentParser
+from collections.abc import Iterable
+from xml.etree.ElementTree import Element
+
+try:
+    # When dettectinator is installed as python library
+    from dettectinator.plugins.support.authentication import Azure
+except ModuleNotFoundError:
+    # When dettectinator is not installed as python library
+    sys.path.append(os.path.dirname(os.path.abspath(__file__).replace('plugins', '')))
+    from plugins.support.authentication import Azure
 
 
 class DatasourceBase:
