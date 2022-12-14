@@ -628,7 +628,7 @@ class DettectDataSourcesAdministration(DettectBase):
                     new_data_source['date_connected'] = date_today
                     new_data_source['products'] = data_source_data['products']
                     new_data_source['available_for_data_analytics'] = data_source_data['available_for_data_analytics']
-                    default_scores = self._set_data_quality(new_data_source, data_source_data)
+                    default_scores, scores_changed = self._set_data_quality(new_data_source, data_source_data)
                     new_data_source['comment'] = 'Auto added by Dettectinator.' + (' TODO: Check data quality scores, default values used.' if default_scores else '')
                     yaml_data_source['data_source'].append(new_data_source)
                     results.append(f'Check data quality scores for data source {data_source_name}. applicable_to is new: {str(data_source_data["applicable_to"])}')
@@ -636,11 +636,19 @@ class DettectDataSourcesAdministration(DettectBase):
                     # applicable_to present, get the object and update:
                     for data_source in yaml_data_source['data_source']:
                         if data_source['applicable_to'] == data_source_data['applicable_to']:
-                            data_source['products'] = data_source_data['products']
-                            data_source['available_for_data_analytics'] = data_source_data['available_for_data_analytics']
-                            data_source['comment'] = 'Auto updated by Dettectinator.'
-                            self._set_data_quality(data_source, data_source_data)
-                            results.append(f'Check data quality scores for data source {data_source_name}. Data source with applicable_to {str(data_source_data["applicable_to"])} is updated.')
+                            changed = False
+                            if data_source['products'] != data_source_data['products']:
+                                data_source['products'] = data_source_data['products']
+                                changed = True
+                            if data_source['available_for_data_analytics'] != data_source_data['available_for_data_analytics']:
+                                data_source['available_for_data_analytics'] = data_source_data['available_for_data_analytics']
+                                changed = True
+                            default_scores, scores_changed = self._set_data_quality(data_source, data_source_data)
+                            if scores_changed:
+                                changed = True
+                            if changed:
+                                data_source['comment'] = 'Auto updated by Dettectinator. TODO: Check data quality scores.'
+                                results.append(f'Check data quality scores for data source {data_source_name}. Data source with applicable_to {str(data_source_data["applicable_to"])} is updated.')
                             break
 
         return warnings, results
@@ -686,19 +694,30 @@ class DettectDataSourcesAdministration(DettectBase):
     @staticmethod
     def _set_data_quality(new_data_source_object, data_source_data):
         if 'data_quality' in data_source_data.keys() and data_source_data['data_quality'] != {}:
-            new_data_source_object['data_quality']['device_completeness'] = data_source_data['data_quality']['device_completeness']
-            new_data_source_object['data_quality']['data_field_completeness'] = data_source_data['data_quality']['data_field_completeness']
-            new_data_source_object['data_quality']['timeliness'] = data_source_data['data_quality']['timeliness']
-            new_data_source_object['data_quality']['consistency'] = data_source_data['data_quality']['consistency']
-            new_data_source_object['data_quality']['retention'] = data_source_data['data_quality']['retention']
-            return False
+            changed = False
+            if new_data_source_object['data_quality']['device_completeness'] != data_source_data['data_quality']['device_completeness']:
+                new_data_source_object['data_quality']['device_completeness'] = data_source_data['data_quality']['device_completeness']
+                changed = True
+            if new_data_source_object['data_quality']['data_field_completeness'] != data_source_data['data_quality']['data_field_completeness']:
+                new_data_source_object['data_quality']['data_field_completeness'] = data_source_data['data_quality']['data_field_completeness']
+                changed = True
+            if new_data_source_object['data_quality']['timeliness'] != data_source_data['data_quality']['timeliness']:
+                new_data_source_object['data_quality']['timeliness'] = data_source_data['data_quality']['timeliness']
+                changed = True
+            if new_data_source_object['data_quality']['consistency'] != data_source_data['data_quality']['consistency']:
+                new_data_source_object['data_quality']['consistency'] = data_source_data['data_quality']['consistency']
+                changed = True
+            if new_data_source_object['data_quality']['retention'] != data_source_data['data_quality']['retention']:
+                new_data_source_object['data_quality']['retention'] = data_source_data['data_quality']['retention']
+                changed = True
+            return False, changed
         else:
             new_data_source_object['data_quality']['device_completeness'] = 1
             new_data_source_object['data_quality']['data_field_completeness'] = 1
             new_data_source_object['data_quality']['timeliness'] = 1
             new_data_source_object['data_quality']['consistency'] = 1
             new_data_source_object['data_quality']['retention'] = 1
-            return True
+            return True, False
 
     def _get_data_source_from_yaml(self, data_source_name: str) -> object:
         """
