@@ -38,6 +38,7 @@ class TechniqueBase:
 
         self._re_include = self._parameters.get('re_include', None)
         self._re_exclude = self._parameters.get('re_exclude', None)
+        self._location_prefix = self._parameters.get('location_prefix', '')
 
     @staticmethod
     def set_plugin_params(parser: ArgumentParser) -> None:
@@ -45,14 +46,17 @@ class TechniqueBase:
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
+        parser.add_argument('-ri', '--re_include', help='Regex for detection names that should be included.',
+                            default=None)
+        parser.add_argument('-re', '--re_exclude', help='Regex for detection names that should be excluded.',
+                            default=None)
         parser.add_argument('-l', '--location_prefix',
                             help='Location of the detection, will be prepended to the detection name.', default='')
 
-    def get_attack_techniques(self, applicable_to: list, location_prefix: str) -> dict:
+    def get_attack_techniques(self, applicable_to: list) -> dict:
         """
         Retrieves use-case/technique data from a data source
         :param applicable_to: Systems that the detections are applicable to
-        :param location_prefix: Location of the detection, will be prepended to the detection name.
         :return: Dictionary, example: {'Detection A': {'applicable_to': ['all'], 'location_prefix': 'SIEM', 'techniques': ['T1055']}}
         """
 
@@ -71,7 +75,7 @@ class TechniqueBase:
                 use_cases[use_case]['techniques'].append(technique)
             else:
                 use_cases[use_case] = {'applicable_to': applicable_to,
-                                       'location_prefix': location_prefix,
+                                       'location_prefix': self._location_prefix,
                                        'techniques': [technique]}
 
         return use_cases
@@ -610,7 +614,7 @@ class TechniqueSuricataRules(TechniqueBase):
 class TechniqueSuricataRulesSummarized(TechniqueSuricataRules):
     """
     Import data from a Suricata rules file. It expects a metadata meta-setting containing a field with the name
-    mitre_technique_id containing the ATT&CK technique ID. This plugins summarized all rules instead of naming all
+    mitre_technique_id containing the ATT&CK technique ID. This plugin summarizes all rules instead of naming all
     rules like in TechniqueSuricataRules plugin.
 
     https://suricata.readthedocs.io/en/latest/rules/meta.html#metadata

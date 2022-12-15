@@ -34,9 +34,6 @@ class DatasourceBase:
     def __init__(self, parameters: dict) -> None:
         self._parameters = parameters
 
-        self._re_include = self._parameters.get('re_include', None)
-        self._re_exclude = self._parameters.get('re_exclude', None)
-
     @staticmethod
     def set_plugin_params(parser: ArgumentParser) -> None:
         """
@@ -55,14 +52,6 @@ class DatasourceBase:
         data_sources = {}
 
         for datasource, product in self.get_data_from_source():
-            # Exclude all products that match the exclude-pattern
-            if self._re_exclude and not re.match(self._re_exclude, product) is None:
-                continue
-
-            # Include all products that match the include-pattern
-            if self._re_include and re.match(self._re_include, product) is None:
-                continue
-
             if datasource not in data_sources.keys():
                 record = {'applicable_to': applicable_to, 'available_for_data_analytics': True, 'products': []}
                 data_sources[datasource] = [record]
@@ -80,6 +69,42 @@ class DatasourceBase:
         :return: Iterable, yields technique, detection
         """
         raise NotImplementedError()
+
+
+class DatasourceExcel(DatasourceBase):
+    """
+    Import data from an Excel file, having a worksheet with two columns: TechniqueId and UseCase
+    """
+
+    def __init__(self, parameters: dict) -> None:
+        super().__init__(parameters)
+        if 'file' not in self._parameters:
+            raise Exception('DatasourceExcel: "file" parameter is required.')
+
+    @staticmethod
+    def set_plugin_params(parser: ArgumentParser) -> None:
+        """
+        Set command line arguments specific for the plugin
+        :param parser: Argument parser
+        """
+        parser.add_argument('--file', help='Path of the Excel file to import', required=True)
+
+    def get_data_from_source(self) -> Iterable:
+        """
+        Gets the use-case/technique data from the source.
+        :return: Iterable, yields technique, detection
+        """
+        file = self._parameters['file']
+        print(f'Reading data from "{file}"')
+
+        import openpyxl
+        wb = openpyxl.load_workbook(filename=file, data_only=True)
+        sheet = wb.worksheets[0]
+
+        for rowNumber in range(2, sheet.max_row + 1):
+            data_source = sheet.cell(row=rowNumber, column=1).value
+            product = sheet.cell(row=rowNumber, column=2).value
+            yield data_source, product
 
 
 class DatasourceOssemBase(DatasourceBase):

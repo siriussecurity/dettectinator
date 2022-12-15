@@ -79,10 +79,6 @@ class CommandLine:
         parser.add_argument('-i', '--input_file', help='YAML filename for input.', default=None)
         parser.add_argument('-o', '--output_file', help='YAML filename for output.', default=None)
         parser.add_argument('-n', '--name', help='Value for the name attribute in the YAML file.', default=None)
-        parser.add_argument('-ri', '--re_include', help='Regex for detection names that should be included.',
-                            default=None)
-        parser.add_argument('-re', '--re_exclude', help='Regex for detection names that should be excluded.',
-                            default=None)
         parser.add_argument('-s', '--stix_location', help='Local STIX repository location.', default=None)
 
         parser.add_argument('-ch', '--check_unused', action='store_true', help='Check unused detections.')
@@ -107,7 +103,7 @@ class CommandLine:
         Process all techiques from the source system
         """
         # Get the technique data
-        rules = plugin.get_attack_techniques(applicable_to, arguments.location_prefix)
+        rules = plugin.get_attack_techniques(applicable_to)
         # Convert data to yaml
         print('Generating techniques YAML file.')
         dettect = DettectTechniquesAdministration(arguments.input_file, domain=arguments.domain,
