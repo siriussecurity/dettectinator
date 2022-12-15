@@ -71,6 +71,44 @@ class DatasourceBase:
         raise NotImplementedError()
 
 
+class DatasourceExcel(DatasourceBase):
+    """
+    Import data from an Excel file, having a worksheet with two columns: TechniqueId and UseCase
+    """
+
+    def __init__(self, parameters: dict) -> None:
+        super().__init__(parameters)
+        if 'file' not in self._parameters:
+            raise Exception('DatasourceExcel: "file" parameter is required.')
+
+    @staticmethod
+    def set_plugin_params(parser: ArgumentParser) -> None:
+        """
+        Set command line arguments specific for the plugin
+        :param parser: Argument parser
+        """
+        TechniqueBase.set_plugin_params(parser)
+
+        parser.add_argument('--file', help='Path of the Excel file to import', required=True)
+
+    def get_data_from_source(self) -> Iterable:
+        """
+        Gets the use-case/technique data from the source.
+        :return: Iterable, yields technique, detection
+        """
+        file = self._parameters['file']
+        print(f'Reading data from "{file}"')
+
+        import openpyxl
+        wb = openpyxl.load_workbook(filename=file, data_only=True)
+        sheet = wb.worksheets[0]
+
+        for rowNumber in range(2, sheet.max_row + 1):
+            data_source = sheet.cell(row=rowNumber, column=1).value
+            product = sheet.cell(row=rowNumber, column=2).value
+            yield data_source, product
+
+
 class DatasourceOssemBase(DatasourceBase):
     """
     Base class for importing datasource/product data that is based on OSSEM data
