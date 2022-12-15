@@ -66,14 +66,49 @@ class DatasourceBase:
     def get_data_from_source(self) -> Iterable:
         """
         Gets the datasource/product data from the source.
-        :return: Iterable, yields technique, detection
+        :return: Iterable, yields datasource, product
         """
         raise NotImplementedError()
 
 
+class DatasourceCsv(DatasourceBase):
+    """
+    Import data from a CSV file, formatted Datasource,Product
+    """
+
+    def __init__(self, parameters: dict) -> None:
+        super().__init__(parameters)
+        if 'file' not in self._parameters:
+            raise Exception('DatasourceCsv: "file" parameter is required.')
+
+    @staticmethod
+    def set_plugin_params(parser: ArgumentParser) -> None:
+        """
+        Set command line arguments specific for the plugin
+        :param parser: Argument parser
+        """
+        parser.add_argument('--file', help='Path of the csv file to import', required=True)
+
+    def get_data_from_source(self) -> Iterable:
+        """
+        Gets the datasource/product data from the source.
+        :return: Iterable, yields datasource, product
+        """
+        file = self._parameters['file']
+        print(f'Reading data from "{file}"')
+
+        with open(file) as f:
+            lines = f.readlines()
+
+        for detection in lines:
+            parts = detection.split(',')
+            data_source = parts[0].strip()
+            product = parts[1].strip()
+            yield data_source, product
+
 class DatasourceExcel(DatasourceBase):
     """
-    Import data from an Excel file, having a worksheet with two columns: TechniqueId and UseCase
+    Import data from an Excel file, having a worksheet with two columns: Datasource and Product
     """
 
     def __init__(self, parameters: dict) -> None:
@@ -91,8 +126,8 @@ class DatasourceExcel(DatasourceBase):
 
     def get_data_from_source(self) -> Iterable:
         """
-        Gets the use-case/technique data from the source.
-        :return: Iterable, yields technique, detection
+        Gets the datasource/product data from the source.
+        :return: Iterable, yields datasource, product
         """
         file = self._parameters['file']
         print(f'Reading data from "{file}"')
@@ -128,7 +163,7 @@ class DatasourceOssemBase(DatasourceBase):
     def get_data_from_source(self) -> Iterable:
         """
         Gets the datasource/product data from the source.
-        :return: Iterable, yields technique, detection
+        :return: Iterable, yields datasource, product
         """
         raise NotImplementedError()
 
@@ -149,7 +184,8 @@ class DatasourceOssemBase(DatasourceBase):
 
 class DatasourceDefenderEndpoints(DatasourceOssemBase):
     """
-    Base class for importing use-case/technique data
+    Class for importing datasource information for Microsoft Defender for Endpoints tables.
+    Uses OSSEM to generate the overview.
     """
 
     def __init__(self, parameters: dict) -> None:
@@ -167,7 +203,7 @@ class DatasourceDefenderEndpoints(DatasourceOssemBase):
     def get_data_from_source(self) -> Iterable:
         """
         Gets the datasource/product data from the source.
-        :return: Iterable, yields technique, detection
+        :return: Iterable, yields datasource, product
         """
         ossem_data = self._get_ossem_data()
 
@@ -182,7 +218,8 @@ class DatasourceDefenderEndpoints(DatasourceOssemBase):
 
 class DatasourceWindowsSysmon(DatasourceOssemBase):
     """
-    Base class for importing use-case/technique data
+    Class for importing datasource information for Sysmon.
+    Uses your Sysmon config file and OSSEM to generate the overview.
     """
 
     def __init__(self, parameters: dict) -> None:
@@ -205,7 +242,7 @@ class DatasourceWindowsSysmon(DatasourceOssemBase):
     def get_data_from_source(self) -> Iterable:
         """
         Gets the datasource/product data from the source.
-        :return: Iterable, yields technique, detection
+        :return: Iterable, yields datasource, product
         """
         ossem_data = self._get_ossem_data()
         sysmon_config = self._get_sysmon_config()
@@ -234,7 +271,8 @@ class DatasourceWindowsSysmon(DatasourceOssemBase):
 
 class DatasourceWindowsSecurityAuditing(DatasourceOssemBase):
     """
-    Base class for importing use-case/technique data
+    Class for importing datasource information for Windows Security Auditing event logging.
+    Uses the event id's logged of the last 30 days and OSSEM to generate the overview.
     """
 
     def __init__(self, parameters: dict) -> None:
@@ -275,7 +313,7 @@ class DatasourceWindowsSecurityAuditing(DatasourceOssemBase):
     def get_data_from_source(self) -> Iterable:
         """
         Gets the datasource/product data from the source.
-        :return: Iterable, yields technique, detection
+        :return: Iterable, yields datasource, product
         """
         access_token = self._connect_to_azure(self._endpoint)
         sentinel_data = self._get_sentinel_data(access_token)
@@ -287,7 +325,7 @@ class DatasourceWindowsSecurityAuditing(DatasourceOssemBase):
 
     def _get_sentinel_data(self, access_token: str) -> list:
         """
-        Execute a query on Advanced Hunting to retrieve the use-case/technique data
+        Execute a query on Advanced Hunting to retrieve the datasource/product data
         :param access_token: JWT token to execute the request on the backend
         :return: Dictionary containing the results
         """
