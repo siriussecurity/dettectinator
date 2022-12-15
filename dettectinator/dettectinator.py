@@ -661,11 +661,13 @@ class DettectDataSourcesAdministration(DettectBase):
         """
         warnings, results = [], []
 
+        data_sources_lowercase = [ds.lower() for ds in data_sources.keys()]
+
         # Loop through all data sources in YAML file:
         to_remove = []
         for yaml_data_source in self._yaml_content['data_sources']:
             # Check if data source is present in data_sources list:
-            if yaml_data_source['data_source_name'] in data_sources.keys():
+            if yaml_data_source['data_source_name'].lower() in data_sources_lowercase:
                 # Data source is present, now check if applicable_to's from YAML are present in data_sources list.
 
                 # Assemble all applicable_to's from data_source list:
