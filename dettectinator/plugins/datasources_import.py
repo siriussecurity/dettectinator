@@ -87,8 +87,6 @@ class DatasourceExcel(DatasourceBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
-        TechniqueBase.set_plugin_params(parser)
-
         parser.add_argument('--file', help='Path of the Excel file to import', required=True)
 
     def get_data_from_source(self) -> Iterable:
