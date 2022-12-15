@@ -594,9 +594,11 @@ class DettectDataSourcesAdministration(DettectBase):
 
         # Loop through all given data sources:
         for data_source_name, data_source_applicable_to in data_sources.items():
-            if data_source_name not in self.data_components:
+            if data_source_name.lower() not in self.data_components.keys():
                 results.append(f'Data source "{data_source_name}" does not exist in ATT&CK ({self.domain}). Skipping.')
                 continue
+            else:
+                data_source_name = self.data_components[data_source_name.lower()]
 
             # Check if data source is already present in YAML file:
             yaml_data_source = self._get_data_source_from_yaml(data_source_name)
@@ -742,9 +744,9 @@ class DettectDataSourcesAdministration(DettectBase):
             # Mobile data components are not yet in CTI, so this will not work
             data_components = self.mitre.TC_MOBILE_SOURCE.query(Filter("type", "=", "x-mitre-data-component"))
 
-        self.data_components = []
+        self.data_components = {}
         for data_component in data_components:
-            self.data_components.append(data_component['name'])
+            self.data_components[data_component['name'].lower()] = data_component['name']
 
 
 if __name__ == '__main__':
