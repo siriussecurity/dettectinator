@@ -211,7 +211,7 @@ class TechniqueAzureAuthBase(TechniqueBase):
 
 class TechniqueSentinelAlertRules(TechniqueAzureAuthBase):
     """
-    Import Analytics Rules from the Sentinel API
+    Import Analytics Rules from the Sentinel API.
     """
 
     def __init__(self, parameters: dict) -> None:
@@ -357,7 +357,7 @@ class TechniqueDefenderIdentityRules(TechniqueBase):
 
 class TechniqueDefenderAlerts(TechniqueAzureAuthBase):
     """
-    Import alerts and techniques from the Microsft Defender API.
+    Import alerts and techniques from the Microsoft Defender API.
     """
     def __init__(self, parameters: dict) -> None:
         super().__init__(parameters)
