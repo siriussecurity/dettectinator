@@ -106,6 +106,7 @@ class DatasourceCsv(DatasourceBase):
             product = parts[1].strip()
             yield data_source, product
 
+
 class DatasourceExcel(DatasourceBase):
     """
     Import data from an Excel file, having a worksheet with two columns: Datasource and Product
@@ -279,13 +280,13 @@ class DatasourceWindowsSecurityAuditing(DatasourceOssemBase):
         super().__init__(parameters)
 
         if 'app_id' not in self._parameters:
-            raise Exception(f'{self.__class__.__name__}: "app_id" parameter is required.')
+            raise Exception(f'DatasourceWindowsSecurityAuditing: "app_id" parameter is required.')
 
         if 'tenant_id' not in self._parameters:
-            raise Exception(f'{self.__class__.__name__}: "tenant_id" parameter is required.')
+            raise Exception(f'DatasourceWindowsSecurityAuditing: "tenant_id" parameter is required.')
 
         if 'workspace_id' not in self._parameters:
-            raise Exception(f'{self.__class__.__name__}: "workspace_id" parameter is required.')
+            raise Exception(f'DatasourceWindowsSecurityAuditing: "workspace_id" parameter is required.')
 
         self._app_id = self._parameters['app_id']
         self._tenant_id = self._parameters['tenant_id']
@@ -362,7 +363,7 @@ class DatasourceWindowsSecurityAuditing(DatasourceOssemBase):
         if response.status_code != requests.codes['ok']:
             # Raise an exception to handle hitting API limits
             if response.status_code == requests.codes['too_many_requests']:
-                raise ConnectionRefusedError('DetectionSentinelAlerts: You have likely hit the API limit. ')
+                raise ConnectionRefusedError('DatasourceWindowsSecurityAuditing: You have likely hit the API limit. ')
             response.raise_for_status()
 
         json_response = response.json()

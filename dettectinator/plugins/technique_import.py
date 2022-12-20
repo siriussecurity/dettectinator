@@ -96,7 +96,7 @@ class TechniqueCsv(TechniqueBase):
     def __init__(self, parameters: dict) -> None:
         super().__init__(parameters)
         if 'file' not in self._parameters:
-            raise Exception('DetectionCsv: "file" parameter is required.')
+            raise Exception('TechniqueCsv: "file" parameter is required.')
 
     @staticmethod
     def set_plugin_params(parser: ArgumentParser) -> None:
@@ -134,7 +134,7 @@ class TechniqueExcel(TechniqueBase):
     def __init__(self, parameters: dict) -> None:
         super().__init__(parameters)
         if 'file' not in self._parameters:
-            raise Exception('DetectionExcel: "file" parameter is required.')
+            raise Exception('TechniqueExcel: "file" parameter is required.')
 
     @staticmethod
     def set_plugin_params(parser: ArgumentParser) -> None:
@@ -218,13 +218,13 @@ class TechniqueSentinelAlertRules(TechniqueAzureAuthBase):
         super().__init__(parameters)
 
         if 'subscription_id' not in self._parameters:
-            raise Exception('DetectionSentinelAlertRules: "subscription_id" parameter is required.')
+            raise Exception('TechniqueSentinelAlertRules: "subscription_id" parameter is required.')
 
         if 'resource_group' not in self._parameters:
-            raise Exception('DetectionSentinelAlertRules: "resource_group" parameter is required.')
+            raise Exception('TechniqueSentinelAlertRules: "resource_group" parameter is required.')
 
         if 'workspace' not in self._parameters:
-            raise Exception('DetectionSentinelAlertRules: "workspace" parameter is required.')
+            raise Exception('TechniqueSentinelAlertRules: "workspace" parameter is required.')
 
         self._subscription_id = self._parameters['subscription_id']
         self._resource_group = self._parameters['resource_group']
@@ -279,7 +279,7 @@ class TechniqueSentinelAlertRules(TechniqueAzureAuthBase):
         if response.status_code != requests.codes['ok']:
             # Raise an exception to handle hitting API limits
             if response.status_code == requests.codes['too_many_requests']:
-                raise ConnectionRefusedError('DetectionSentinelAlerts: You have likely hit the API limit. ')
+                raise ConnectionRefusedError('TechniqueSentinelAlertRules: You have likely hit the API limit. ')
             response.raise_for_status()
 
         json_response = response.json()
@@ -407,7 +407,7 @@ class TechniqueDefenderAlerts(TechniqueAzureAuthBase):
         if response.status_code != requests.codes['ok']:
             # Raise an exception to handle hitting API limits
             if response.status_code == requests.codes['too_many_requests']:
-                raise ConnectionRefusedError('DetectionDefenderAlerts: You have likely hit the API limit. ')
+                raise ConnectionRefusedError('TechniqueDefenderAlerts: You have likely hit the API limit. ')
             response.raise_for_status()
 
         json_response = response.json()
@@ -424,13 +424,13 @@ class TechniqueTaniumSignals(TechniqueBase):
         super().__init__(parameters)
 
         if 'host' not in self._parameters:
-            raise Exception('DetectionTaniumSignals: "host" parameter is required.')
+            raise Exception('TechniqueTaniumSignals: "host" parameter is required.')
         if 'user' not in self._parameters:
-            raise Exception('DetectionTaniumSignals: "user" parameter is required.')
+            raise Exception('TechniqueTaniumSignals: "user" parameter is required.')
         if 'password' not in self._parameters:
-            raise Exception('DetectionTaniumSignals: "password" parameter is required.')
+            raise Exception('TechniqueTaniumSignals: "password" parameter is required.')
         if 'search_prefix' not in self._parameters:
-            raise Exception('DetectionTaniumSignals: "search_prefix" parameter is required.')
+            raise Exception('TechniqueTaniumSignals: "search_prefix" parameter is required.')
 
         self._host = self._parameters['host']
         self._user = self._parameters['user']
@@ -480,7 +480,7 @@ class TechniqueTaniumSignals(TechniqueBase):
         if r.status_code == requests.codes.ok:
             return r.json()
         else:
-            raise Exception(f'DetectionTaniumSignals: get all signals failed: {r.text}')
+            raise Exception(f'TechniqueTaniumSignals: get all signals failed: {r.text}')
 
 
 class TechniqueElasticSecurityRules(TechniqueBase):
@@ -491,11 +491,11 @@ class TechniqueElasticSecurityRules(TechniqueBase):
         super().__init__(parameters)
 
         if 'host' not in self._parameters:
-            raise Exception('DetectionElasticSecurityRules: "host" parameter is required.')
+            raise Exception('TechniqueElasticSecurityRules: "host" parameter is required.')
         if 'user' not in self._parameters:
-            raise Exception('DetectionElasticSecurityRules: "user" parameter is required.')
+            raise Exception('TechniqueElasticSecurityRules: "user" parameter is required.')
         if 'password' not in self._parameters:
-            raise Exception('DetectionElasticSecurityRules: "password" parameter is required.')
+            raise Exception('TechniqueElasticSecurityRules: "password" parameter is required.')
 
         self._host = self._parameters['host']
         self._user = self._parameters['user']
@@ -547,7 +547,7 @@ class TechniqueElasticSecurityRules(TechniqueBase):
         if r.status_code == requests.codes.ok:
             return r.json()
         else:
-            raise Exception(f'DetectionElasticSecurityRules: get all rules failed: {r.text}')
+            raise Exception(f'TechniqueElasticSecurityRules: get all rules failed: {r.text}')
 
 
 class TechniqueSuricataRules(TechniqueBase):
@@ -568,7 +568,7 @@ class TechniqueSuricataRules(TechniqueBase):
     def __init__(self, parameters: dict) -> None:
         super().__init__(parameters)
         if 'file' not in self._parameters:
-            raise Exception('DetectionSuricateRules: "file" parameter is required.')
+            raise Exception('TechniqueSuricataRules: "file" parameter is required.')
 
     @staticmethod
     def set_plugin_params(parser: ArgumentParser) -> None:
@@ -664,7 +664,7 @@ class TechniqueSigmaRules(TechniqueBase):
     def __init__(self, parameters: dict) -> None:
         super().__init__(parameters)
         if 'folder' not in self._parameters:
-            raise Exception('DetectionSigmaRules: "folder" parameter is required.')
+            raise Exception('TechniqueSigmaRules: "folder" parameter is required.')
 
     @staticmethod
     def set_plugin_params(parser: ArgumentParser) -> None:
@@ -684,7 +684,7 @@ class TechniqueSigmaRules(TechniqueBase):
         folder = self._parameters['folder']
 
         if not os.path.isdir(folder):
-            raise Exception(f'Folder does not exist: {folder}')
+            raise Exception(f'TechniqueSigmaRules: Folder does not exist: {folder}')
 
         from ruamel.yaml import YAML
 
@@ -699,7 +699,7 @@ class TechniqueSigmaRules(TechniqueBase):
                         with open(filename, 'r') as yaml_file:
                             yaml_content = yaml.load(yaml_file)
                     except Exception as e:
-                        raise Exception(f'Failed loading YAML file "{filename}". Error: {str(e)}') from e
+                        raise Exception(f'TechniqueSigmaRules: Failed loading YAML file "{filename}". Error: {str(e)}') from e
 
                     if 'tags' in yaml_content.keys():
                         for tag in yaml_content['tags']:
@@ -720,7 +720,7 @@ class TechniqueSplunkConfigSearches(TechniqueBase):
     def __init__(self, parameters: dict) -> None:
         super().__init__(parameters)
         if 'file' not in self._parameters:
-            raise Exception('DetectionSplunkConfigSearches: "file" parameter is required.')
+            raise Exception('TechniqueSplunkConfigSearches: "file" parameter is required.')
 
     @staticmethod
     def set_plugin_params(parser: ArgumentParser) -> None:

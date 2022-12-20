@@ -4,8 +4,6 @@ Authors:
     Martijn Veken, Sirius Security
     Ruben Bouman, Sirius Security
 License: GPL-3.0 License
-
-Some functions and code are taken with permission from the DeTT&CT project (http://github.com/rabobank-cdc/DeTTECT).
 """
 
 import json
@@ -13,6 +11,7 @@ import sys
 import os
 import importlib
 import inspect
+
 from dettectinator import DettectTechniquesAdministration, DettectDataSourcesAdministration
 from plugins.technique_import import TechniqueBase
 from plugins.datasources_import import DatasourceBase
@@ -24,19 +23,19 @@ class CommandLine:
     @staticmethod
     def _get_raw_commandline(argument_names: list) -> str:
         """
-        We need to get the name from the plugin before Argument parser can do its job.
-        This is because the plugin needs to be able to add its arguments to the command line
-        before argument parser does its job. It's ugly, but it works :)
-        :return: The name of the import plugin to load
+        Some arguments need to be read from the command line before being processed with ArgumentParser.
+        This function provides a way to read these values from the command line in a simple way.
+        It's ugly, but it works :)
+        :return: The value of the requested argument.
         """
         prev = ''
-        name = ''
+        value = ''
         for item in sys.argv:
             if prev in argument_names:
-                name = item
+                value = item
                 break
             prev = item
-        return name
+        return value
 
     @staticmethod
     def _print_plugins(import_plugins: dict) -> None:
@@ -100,24 +99,24 @@ class CommandLine:
     @staticmethod
     def process_techniques(applicable_to: list, arguments: Namespace, plugin: TechniqueBase) -> tuple:
         """
-        Process all techiques from the source system
+        Process all techniques from the source system
         """
         # Get the technique data
-        rules = plugin.get_attack_techniques(applicable_to)
+        techniques = plugin.get_attack_techniques(applicable_to)
         # Convert data to yaml
         print('Generating techniques YAML file.')
         dettect = DettectTechniquesAdministration(arguments.input_file, domain=arguments.domain,
                                                   local_stix_path=arguments.stix_location)
-        warnings, results = dettect.update_detections(rules, check_unused_detections=arguments.check_unused,
+        warnings, results = dettect.update_detections(techniques, check_unused_detections=arguments.check_unused,
                                                       clean_unused_detections=arguments.clean_unused)
         return dettect, results, warnings
 
     @staticmethod
     def process_datasource(applicable_to: list, arguments: Namespace, plugin: DatasourceBase) -> tuple:
         """
-        Process all techiques from the source system
+        Process all data sources from the source system
         """
-        # Get the technique data
+        # Get the data source data
         datasources = plugin.get_attack_datasources(applicable_to)
         # Convert data to yaml
         print('Generating datasources YAML file.')
@@ -127,7 +126,11 @@ class CommandLine:
                                                         clean_unused_data_sources=arguments.clean_unused)
         return dettect, results, warnings
 
-    def start(self):
+    def start(self) -> None:
+        """
+        Dettectinator has been started from the commandline.
+        Process the command line arguments and launch the appropriate plugin.
+        """
 
         # Load default argument values from the config file
         config_file_arguments = self._get_argument_values_from_config_file()
@@ -136,7 +139,7 @@ class CommandLine:
         plugins = self._get_plugins()
 
         # Get the plugin name from the arguments
-        plugin_name = config_file_arguments.get("plugin", self._get_raw_commandline(['-p', '--plugin']))
+        plugin_name = config_file_arguments.get('plugin', self._get_raw_commandline(['-p', '--plugin']))
 
         if plugin_name:
             # Get the plugin class if it exists

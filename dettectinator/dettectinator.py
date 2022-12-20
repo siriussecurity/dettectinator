@@ -752,6 +752,7 @@ class DettectDataSourcesAdministration(DettectBase):
 
 
 if __name__ == '__main__':
+    # Where being run from the command line here, start CLI logic
     cli_mod = importlib.import_module('cli')
     cli= getattr(cli_mod, 'CommandLine')()
     cli.start()
