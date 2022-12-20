@@ -52,6 +52,8 @@ class TechniqueBase:
                             default=None)
         parser.add_argument('-l', '--location_prefix',
                             help='Location of the detection, will be prepended to the detection name.', default='')
+        parser.add_argument('-clp', '--clean_unused_location_prefix', action='store_true',
+                            help='Clean unused detections based on location_prefix.')
 
     def get_attack_techniques(self, applicable_to: list) -> dict:
         """

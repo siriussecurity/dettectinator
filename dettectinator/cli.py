@@ -107,8 +107,12 @@ class CommandLine:
         print('Generating techniques YAML file.')
         dettect = DettectTechniquesAdministration(arguments.input_file, domain=arguments.domain,
                                                   local_stix_path=arguments.stix_location)
+
+        location_prefix_unused_detections = arguments.location_prefix if arguments.clean_unused_location_prefix else ''
+
         warnings, results = dettect.update_detections(techniques, check_unused_detections=arguments.check_unused,
-                                                      clean_unused_detections=arguments.clean_unused)
+                                                      clean_unused_detections=arguments.clean_unused,
+                                                      location_prefix_unused_detections=location_prefix_unused_detections)
         return dettect, results, warnings
 
     @staticmethod
