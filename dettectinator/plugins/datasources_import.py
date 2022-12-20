@@ -45,7 +45,7 @@ class DatasourceBase:
     def get_attack_datasources(self, applicable_to: list) -> dict:
         """
         Retrieves datasource/product data from a data source
-        :param applicable_to: Systems that the datasources are applicable to.
+        :param applicable_to: Systems that the data sources are applicable to.
         :return: Dictionary, example: {"User Account Creation":[{"applicable_to":["test"],"available_for_data_analytics":true,"products":["DeviceEvents: UserAccountCreated"]}]}
         """
 
@@ -109,7 +109,7 @@ class DatasourceCsv(DatasourceBase):
 
 class DatasourceExcel(DatasourceBase):
     """
-    Import data from an Excel file, having a worksheet with two columns: Datasource and Product
+    Import data sources from an Excel file, having a worksheet with two columns: Datasource and Product
     """
 
     def __init__(self, parameters: dict) -> None:
@@ -185,7 +185,7 @@ class DatasourceOssemBase(DatasourceBase):
 
 class DatasourceDefenderEndpoints(DatasourceOssemBase):
     """
-    Class for importing datasource information for Microsoft Defender for Endpoints tables.
+    Class for importing data source information for Microsoft Defender for Endpoints tables.
     Uses OSSEM to generate the overview.
     """
 
@@ -219,7 +219,7 @@ class DatasourceDefenderEndpoints(DatasourceOssemBase):
 
 class DatasourceWindowsSysmon(DatasourceOssemBase):
     """
-    Class for importing datasource information for Sysmon.
+    Class for importing data source information for Sysmon.
     Uses your Sysmon config file and OSSEM to generate the overview.
     """
 
@@ -272,8 +272,8 @@ class DatasourceWindowsSysmon(DatasourceOssemBase):
 
 class DatasourceWindowsSecurityAuditing(DatasourceOssemBase):
     """
-    Class for importing datasource information for Windows Security Auditing event logging.
-    Uses the event id's logged of the last 30 days and OSSEM to generate the overview.
+    Class for importing data source information for Windows Security Auditing event logging.
+    Uses the event id's logged in the last 30 days and OSSEM to generate the overview.
     """
 
     def __init__(self, parameters: dict) -> None:

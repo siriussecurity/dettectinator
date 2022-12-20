@@ -211,7 +211,7 @@ class TechniqueAzureAuthBase(TechniqueBase):
 
 class TechniqueSentinelAlertRules(TechniqueAzureAuthBase):
     """
-    Import Analytics Rules from the Sentinel API
+    Import Analytics Rules from the Sentinel API.
     """
 
     def __init__(self, parameters: dict) -> None:
@@ -357,7 +357,7 @@ class TechniqueDefenderIdentityRules(TechniqueBase):
 
 class TechniqueDefenderAlerts(TechniqueAzureAuthBase):
     """
-    Import alerts and techniques from the Microsft Defender API.
+    Import alerts and techniques from the Microsoft Defender API.
     """
     def __init__(self, parameters: dict) -> None:
         super().__init__(parameters)
@@ -746,12 +746,20 @@ class TechniqueSplunkConfigSearches(TechniqueBase):
             splunk_config = splunk_conf_parser.TABConfigParser()
             splunk_config.read_file(f)
 
+        # Read the default value for disabled attribute:
+        default_disabled = '0'
+        if 'default' in splunk_config.sections():
+            if 'disabled' in splunk_config['default'].keys():
+                default_disabled = splunk_config['default']['disabled']
+
         ignore_list = ['default']
         for section in splunk_config.sections():
+            # Ignore some searches:
             if splunk_config[section].name in ignore_list \
                or 'action.correlationsearch.label' not in splunk_config[section].keys() \
                or 'action.correlationsearch.annotations' not in splunk_config[section].keys() \
-               or ('disabled' in splunk_config[section].keys() and splunk_config[section]['disabled'] == '1'):
+               or ('disabled' in splunk_config[section].keys() and splunk_config[section]['disabled'] == '1') \
+               or ('disabled' not in splunk_config[section].keys() and default_disabled == '1'):
                 continue
 
             try:
