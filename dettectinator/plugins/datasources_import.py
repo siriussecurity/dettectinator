@@ -42,16 +42,18 @@ class DatasourceBase:
         """
         raise NotImplementedError()
 
-    def get_attack_datasources(self, applicable_to: list) -> dict:
+    def get_attack_datasources(self, default_applicable_to: list) -> dict:
         """
         Retrieves datasource/product data from a data source
-        :param applicable_to: Systems that the data sources are applicable to.
+        :param default_applicable_to: Systems that the data sources are applicable to.
         :return: Dictionary, example: {"User Account Creation":[{"applicable_to":["test"],"available_for_data_analytics":true,"products":["DeviceEvents: UserAccountCreated"]}]}
         """
 
         data_sources = {}
 
-        for datasource, product in self.get_data_from_source():
+        for datasource, product, applicable_to in self.get_data_from_source():
+            applicable_to = applicable_to or default_applicable_to
+
             if datasource not in data_sources.keys():
                 record = {'applicable_to': applicable_to, 'available_for_data_analytics': True, 'products': []}
                 data_sources[datasource] = [record]
@@ -66,7 +68,7 @@ class DatasourceBase:
     def get_data_from_source(self) -> Iterable:
         """
         Gets the datasource/product data from the source.
-        :return: Iterable, yields datasource, product
+        :return: Iterable, yields datasource, product, applicable_to
         """
         raise NotImplementedError()
 
@@ -92,7 +94,7 @@ class DatasourceCsv(DatasourceBase):
     def get_data_from_source(self) -> Iterable:
         """
         Gets the datasource/product data from the source.
-        :return: Iterable, yields datasource, product
+        :return: Iterable, yields datasource, product, applicable_to
         """
         file = self._parameters['file']
         print(f'Reading data from "{file}"')
@@ -104,7 +106,7 @@ class DatasourceCsv(DatasourceBase):
             parts = detection.split(',')
             data_source = parts[0].strip()
             product = parts[1].strip()
-            yield data_source, product
+            yield data_source, product, None
 
 
 class DatasourceExcel(DatasourceBase):
@@ -128,7 +130,7 @@ class DatasourceExcel(DatasourceBase):
     def get_data_from_source(self) -> Iterable:
         """
         Gets the datasource/product data from the source.
-        :return: Iterable, yields datasource, product
+        :return: Iterable, yields datasource, product, applicable_to
         """
         file = self._parameters['file']
         print(f'Reading data from "{file}"')
@@ -140,7 +142,7 @@ class DatasourceExcel(DatasourceBase):
         for rowNumber in range(2, sheet.max_row + 1):
             data_source = sheet.cell(row=rowNumber, column=1).value
             product = sheet.cell(row=rowNumber, column=2).value
-            yield data_source, product
+            yield data_source, product, None
 
 
 class DatasourceOssemBase(DatasourceBase):
@@ -164,7 +166,7 @@ class DatasourceOssemBase(DatasourceBase):
     def get_data_from_source(self) -> Iterable:
         """
         Gets the datasource/product data from the source.
-        :return: Iterable, yields datasource, product
+        :return: Iterable, yields datasource, product, applicable_to
         """
         raise NotImplementedError()
 
@@ -204,7 +206,7 @@ class DatasourceDefenderEndpoints(DatasourceOssemBase):
     def get_data_from_source(self) -> Iterable:
         """
         Gets the datasource/product data from the source.
-        :return: Iterable, yields datasource, product
+        :return: Iterable, yields datasource, product, applicable_to
         """
         ossem_data = self._get_ossem_data()
 
@@ -212,9 +214,9 @@ class DatasourceDefenderEndpoints(DatasourceOssemBase):
             action_types = json.loads(record['Filter in Log'].replace('\'', '\"'))
             if len(action_types) > 0:
                 for action_type in action_types:
-                    yield str(record['Component']).title(), f'{record ["Event Name"]}: {action_type["ActionType"]}'
+                    yield str(record['Component']).title(), f'{record ["Event Name"]}: {action_type["ActionType"]}', None
             else:
-                yield str(record['Component']).title(), record['Event Name']
+                yield str(record['Component']).title(), record['Event Name'], None
 
 
 class DatasourceWindowsSysmon(DatasourceOssemBase):
@@ -243,7 +245,7 @@ class DatasourceWindowsSysmon(DatasourceOssemBase):
     def get_data_from_source(self) -> Iterable:
         """
         Gets the datasource/product data from the source.
-        :return: Iterable, yields datasource, product
+        :return: Iterable, yields datasource, product, applicable_to
         """
         ossem_data = self._get_ossem_data()
         sysmon_config = self._get_sysmon_config()
@@ -259,7 +261,7 @@ class DatasourceWindowsSysmon(DatasourceOssemBase):
 
             data_source = str(record['Component']).title()
             product = f'{record["EventID"]}: {record["Event Name"]}'
-            yield data_source, product
+            yield data_source, product, None
 
     def _get_sysmon_config(self) -> Element:
         """
@@ -314,7 +316,7 @@ class DatasourceWindowsSecurityAuditing(DatasourceOssemBase):
     def get_data_from_source(self) -> Iterable:
         """
         Gets the datasource/product data from the source.
-        :return: Iterable, yields datasource, product
+        :return: Iterable, yields datasource, product, applicable_to
         """
         access_token = self._connect_to_azure(self._endpoint)
         sentinel_data = self._get_sentinel_data(access_token)
@@ -322,7 +324,7 @@ class DatasourceWindowsSecurityAuditing(DatasourceOssemBase):
         for record in sentinel_data:
             data_source = record[0].title()
             product = record[1]
-            yield data_source, product
+            yield data_source, product, None
 
     def _get_sentinel_data(self, access_token: str) -> list:
         """

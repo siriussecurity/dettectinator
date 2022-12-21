@@ -55,16 +55,16 @@ class TechniqueBase:
         parser.add_argument('-clp', '--clean_unused_location_prefix', action='store_true',
                             help='Clean unused detections based on location_prefix.')
 
-    def get_attack_techniques(self, applicable_to: list) -> dict:
+    def get_attack_techniques(self, default_applicable_to: list) -> dict:
         """
         Retrieves use-case/technique data from a data source
-        :param applicable_to: Systems that the detections are applicable to
+        :param default_applicable_to: Default value for systems that the detections are applicable to (can be overrule from source)
         :return: Dictionary, example: {'Detection A': {'applicable_to': ['all'], 'location_prefix': 'SIEM', 'techniques': ['T1055']}}
         """
 
         use_cases = {}
 
-        for technique, use_case in self.get_data_from_source():
+        for technique, use_case, applicable_to in self.get_data_from_source():
             # Exclude all detections that match the exclude-pattern
             if self._re_exclude and not re.match(self._re_exclude, use_case) is None:
                 continue
@@ -72,6 +72,8 @@ class TechniqueBase:
             # Include all detections that match the include-pattern
             if self._re_include and re.match(self._re_include, use_case) is None:
                 continue
+
+            applicable_to = applicable_to or default_applicable_to
 
             if use_case in use_cases.keys():
                 use_cases[use_case]['techniques'].append(technique)
@@ -85,7 +87,7 @@ class TechniqueBase:
     def get_data_from_source(self) -> Iterable:
         """
         Gets the use-case/technique data from the source.
-        :return: Iterable, yields technique, detection
+        :return: Iterable, yields technique, detection, applicable_to
         """
         raise NotImplementedError()
 
@@ -113,7 +115,7 @@ class TechniqueCsv(TechniqueBase):
     def get_data_from_source(self) -> Iterable:
         """
         Gets the use-case/technique data from the source.
-        :return: Iterable, yields technique, detection
+        :return: Iterable, yields technique, detection, applicable_to
         """
         file = self._parameters['file']
         print(f'Reading data from "{file}"')
@@ -125,7 +127,7 @@ class TechniqueCsv(TechniqueBase):
             parts = detection.split(',')
             technique = parts[0].strip()
             use_case = parts[1].strip()
-            yield technique, use_case
+            yield technique, use_case, None
 
 
 class TechniqueExcel(TechniqueBase):
@@ -151,7 +153,7 @@ class TechniqueExcel(TechniqueBase):
     def get_data_from_source(self) -> Iterable:
         """
         Gets the use-case/technique data from the source.
-        :return: Iterable, yields technique, detection
+        :return: Iterable, yields technique, detection, applicable_to
         """
         file = self._parameters['file']
         print(f'Reading data from "{file}"')
@@ -164,7 +166,7 @@ class TechniqueExcel(TechniqueBase):
             techniques = sheet.cell(row=rowNumber, column=1).value
             detection = sheet.cell(row=rowNumber, column=2).value
             for technique in techniques.split(','):
-                yield technique.strip(), detection
+                yield technique.strip(), detection, None
 
 
 class TechniqueAzureAuthBase(TechniqueBase):
@@ -200,7 +202,7 @@ class TechniqueAzureAuthBase(TechniqueBase):
     def get_data_from_source(self) -> Iterable:
         """
          Gets the use-case/technique data from the source.
-         :return: Iterable, yields technique, detection
+         :return: Iterable, yields technique, detection, applicable_to
          """
         raise NotImplementedError()
 
@@ -248,7 +250,7 @@ class TechniqueSentinelAlertRules(TechniqueAzureAuthBase):
     def get_data_from_source(self) -> Iterable:
         """
          Gets the use-case/technique data from the source.
-         :return: Iterable, yields technique, detection
+         :return: Iterable, yields technique, detection, applicable_to
          """
         access_token = self._connect_to_azure(self._endpoint)
         sentinel_data = self._get_sentinel_data(access_token)
@@ -259,7 +261,7 @@ class TechniqueSentinelAlertRules(TechniqueAzureAuthBase):
             if 'techniques' in properties and properties['techniques']:
                 for technique in properties['techniques']:
                     use_case = properties['displayName']
-                    yield technique, use_case
+                    yield technique, use_case, None
 
     def _get_sentinel_data(self, access_token: str) -> list:
         """
@@ -318,7 +320,7 @@ class TechniqueDefenderIdentityRules(TechniqueBase):
     def get_data_from_source(self) -> Iterable:
         """
         Gets the use-case/technique data from the source.
-        :return: Iterable, yields technique, detection
+        :return: Iterable, yields technique, detection, applicable_to
         """
         for source_url in self.ATP_DOCS:
             resp = requests.get(source_url)
@@ -346,14 +348,14 @@ class TechniqueDefenderIdentityRules(TechniqueBase):
                         tech_match = regex_tech.findall(line)
                         if tech_match:
                             for t in tech_match:
-                                yield t, current_detection
+                                yield t, current_detection, None
                     elif 'MITRE attack sub-technique' in line and 'N/A' in line:
                         current_detection = None
                     elif 'MITRE attack sub-technique' in line:
                         subtech_match = regex_subtech.findall(line)
                         if subtech_match:
                             for t in subtech_match:
-                                yield t, current_detection
+                                yield t, current_detection, None
                             current_detection = None
 
 
@@ -369,7 +371,7 @@ class TechniqueDefenderAlerts(TechniqueAzureAuthBase):
     def get_data_from_source(self) -> Iterable:
         """
         Gets the use-case/technique data from the source.
-        :return: Iterable, yields technique, detection
+        :return: Iterable, yields technique, detection, applicable_to
         """
         access_token = self._connect_to_azure(self._endpoint)
         defender_data = self._get_defender_data(access_token)
@@ -377,7 +379,7 @@ class TechniqueDefenderAlerts(TechniqueAzureAuthBase):
         for record in defender_data:
             technique = record['TechniqueId']
             use_case = record['Title'].strip()
-            yield technique, use_case
+            yield technique, use_case, None
 
     @staticmethod
     def _get_defender_data(access_token: str) -> dict:
@@ -459,7 +461,7 @@ class TechniqueTaniumSignals(TechniqueBase):
     def get_data_from_source(self) -> Iterable:
         """
         Gets the use-case/technique data from the source.
-        :return: Iterable, yields technique, detection
+        :return: Iterable, yields technique, detection, applicable_to
         """
         tanium_data = self._get_all_signals()
 
@@ -470,7 +472,7 @@ class TechniqueTaniumSignals(TechniqueBase):
                 for t in signal_techniques['techniques']:
                     technique = t['id']
                     use_case = signal['name']
-                    yield technique, use_case
+                    yield technique, use_case, None
 
     def _get_all_signals(self) -> dict:
         """
@@ -521,7 +523,7 @@ class TechniqueElasticSecurityRules(TechniqueBase):
     def get_data_from_source(self) -> Iterable:
         """
         Gets the use-case/technique data from the source.
-        :return: Iterable, yields technique, detection
+        :return: Iterable, yields technique, detection, applicable_to
         """
         rule_data = self._get_all_rules()
 
@@ -534,11 +536,11 @@ class TechniqueElasticSecurityRules(TechniqueBase):
                                 for subtech in tech['subtechnique']:
                                     technique = subtech['id']
                                     use_case = rule['name']
-                                    yield technique, use_case
+                                    yield technique, use_case, None
                             else:
                                 technique = tech['id']
                                 use_case = rule['name']
-                                yield technique, use_case
+                                yield technique, use_case, None
 
     def _get_all_rules(self):
         headers = {'kbn-xsrf': 'dettect', 'Content-Type': 'application/json'}
@@ -585,7 +587,7 @@ class TechniqueSuricataRules(TechniqueBase):
     def get_data_from_source(self) -> Iterable:
         """
         Gets the use-case/technique data from the source.
-        :return: Iterable, yields technique, detection
+        :return: Iterable, yields technique, detection, applicable_to
         """
         file = self._parameters['file']
         print(f'Reading data from "{file}"')
@@ -599,7 +601,7 @@ class TechniqueSuricataRules(TechniqueBase):
                     if option.name == 'metadata':
                         meta_data = self._convert_metadata_list_to_dict(option.value.data)
                         if 'mitre_technique_id' in meta_data.keys():
-                            yield meta_data['mitre_technique_id'], rule.msg
+                            yield meta_data['mitre_technique_id'], rule.msg, None
 
     @staticmethod
     def _convert_metadata_list_to_dict(meta_data: list) -> dict:
@@ -635,7 +637,7 @@ class TechniqueSuricataRulesSummarized(TechniqueSuricataRules):
     def get_data_from_source(self) -> Iterable:
         """
         Gets the use-case/technique data from the source.
-        :return: Iterable, yields technique, detection
+        :return: Iterable, yields technique, detection, applicable_to
         """
         file = self._parameters['file']
         print(f'Reading data from "{file}"')
@@ -655,7 +657,7 @@ class TechniqueSuricataRulesSummarized(TechniqueSuricataRules):
                             summary[meta_data['mitre_technique_id']] += 1
 
         for tech_id, count in summary.items():
-            yield tech_id, f'Suricata rules: #{count}'
+            yield tech_id, f'Suricata rules: #{count}', None
 
 
 class TechniqueSigmaRules(TechniqueBase):
@@ -681,7 +683,7 @@ class TechniqueSigmaRules(TechniqueBase):
     def get_data_from_source(self) -> Iterable:
         """
         Gets the use-case/technique data from the source.
-        :return: Iterable, yields technique, detection
+        :return: Iterable, yields technique, detection, applicable_to
         """
         folder = self._parameters['folder']
 
@@ -706,7 +708,7 @@ class TechniqueSigmaRules(TechniqueBase):
                     if 'tags' in yaml_content.keys():
                         for tag in yaml_content['tags']:
                             if tag.startswith('attack.t'):
-                                yield tag[7:].upper(), yaml_content['title']
+                                yield tag[7:].upper(), yaml_content['title'], None
 
 
 class TechniqueSplunkConfigSearches(TechniqueBase):
@@ -737,7 +739,7 @@ class TechniqueSplunkConfigSearches(TechniqueBase):
     def get_data_from_source(self) -> Iterable:
         """
         Gets the use-case/technique data from the source.
-        :return: Iterable, yields technique, detection
+        :return: Iterable, yields technique, detection, applicable_to
         """
         file = self._parameters['file']
         print(f'Reading data from "{file}"')
@@ -771,4 +773,4 @@ class TechniqueSplunkConfigSearches(TechniqueBase):
             else:
                 if 'mitre_attack' in annotations.keys():
                     for technique in annotations['mitre_attack']:
-                        yield technique, splunk_config[section].name
+                        yield technique, splunk_config[section].name, None
