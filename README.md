@@ -1,3 +1,4 @@
+# Dettectinator
 Dettectinator - The Python library to your DeTT&amp;CT YAML files.
 
 [DeTT&CT](https://github.com/rabobank-cdc/DeTTECT) is a framework that helps blue teams in using MITRE ATT&CK to score and compare data log source quality, visibility coverage, detection coverage and threat actor behaviours. All administration is done in YAML files which can be editted via the [DeTT&CT Editor](https://rabobank-cdc.github.io/dettect-editor). But what if you want to automate the generation and modification of these YAML files? That's were Dettectinator comes in!
@@ -27,6 +28,6 @@ For data sources, you can use the following plugins:
 - CSV: any csv with ATT&CK data sources and products (file)
 - Excel: any Excel file with ATT&CK data sources and products (file)
 
-It's easy to create your own Dettectinator plugins or edit the ones we've provided to cover additional scenario's.
+It's easy to create your own Dettectinator plugins or edit the ones we've provided to cover additional scenarios.
 
 More information on how to use Dettectinator and how to use and create plugins can be found in the [wiki](https://github.com/siriussecurity/dettectinator/wiki).
