@@ -28,7 +28,7 @@ except ModuleNotFoundError:
 urllib3.disable_warnings()
 
 
-class ImportBase:
+class TechniqueBase:
     """
     Base class for importing use-case/technique data
     """
@@ -38,6 +38,7 @@ class ImportBase:
 
         self._re_include = self._parameters.get('re_include', None)
         self._re_exclude = self._parameters.get('re_exclude', None)
+        self._location_prefix = self._parameters.get('location_prefix', '')
 
     @staticmethod
     def set_plugin_params(parser: ArgumentParser) -> None:
@@ -45,32 +46,40 @@ class ImportBase:
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
-        raise NotImplementedError()
+        parser.add_argument('-ri', '--re_include', help='Regex for detection names that should be included.',
+                            default=None)
+        parser.add_argument('-re', '--re_exclude', help='Regex for detection names that should be excluded.',
+                            default=None)
+        parser.add_argument('-l', '--location_prefix',
+                            help='Location of the detection, will be prepended to the detection name.', default='')
+        parser.add_argument('-clp', '--clean_unused_location_prefix', action='store_true',
+                            help='Clean unused detections based on location_prefix.')
 
-    def get_attack_techniques(self, applicable_to: list, location_prefix: str) -> dict:
+    def get_attack_techniques(self, default_applicable_to: list) -> dict:
         """
         Retrieves use-case/technique data from a data source
-        :param applicable_to: Systems that the detections are applicable to.
-        :param location_prefix: Location of the detection, will be prepended to the detection name.
+        :param default_applicable_to: Default value for systems that the detections are applicable to (can be overrule from source)
         :return: Dictionary, example: {'Detection A': {'applicable_to': ['all'], 'location_prefix': 'SIEM', 'techniques': ['T1055']}}
         """
 
         use_cases = {}
 
-        for technique, use_case in self.get_data_from_source():
-            # Exclude all detections that match the exclude pattern
+        for technique, use_case, applicable_to in self.get_data_from_source():
+            # Exclude all detections that match the exclude-pattern
             if self._re_exclude and not re.match(self._re_exclude, use_case) is None:
                 continue
 
-            # Include all detections that match the include pattern
+            # Include all detections that match the include-pattern
             if self._re_include and re.match(self._re_include, use_case) is None:
                 continue
+
+            applicable_to = applicable_to or default_applicable_to
 
             if use_case in use_cases.keys():
                 use_cases[use_case]['techniques'].append(technique)
             else:
                 use_cases[use_case] = {'applicable_to': applicable_to,
-                                       'location_prefix': location_prefix,
+                                       'location_prefix': self._location_prefix,
                                        'techniques': [technique]}
 
         return use_cases
@@ -78,12 +87,12 @@ class ImportBase:
     def get_data_from_source(self) -> Iterable:
         """
         Gets the use-case/technique data from the source.
-        :return: Iterable, yields technique, detection
+        :return: Iterable, yields technique, detection, applicable_to
         """
         raise NotImplementedError()
 
 
-class ImportCsv(ImportBase):
+class TechniqueCsv(TechniqueBase):
     """
     Import data from a CSV file, formatted TechniqueId,UseCase
     """
@@ -91,7 +100,7 @@ class ImportCsv(ImportBase):
     def __init__(self, parameters: dict) -> None:
         super().__init__(parameters)
         if 'file' not in self._parameters:
-            raise Exception('ImportCsv: "file" parameter is required.')
+            raise Exception('TechniqueCsv: "file" parameter is required.')
 
     @staticmethod
     def set_plugin_params(parser: ArgumentParser) -> None:
@@ -99,12 +108,14 @@ class ImportCsv(ImportBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
+        TechniqueBase.set_plugin_params(parser)
+
         parser.add_argument('--file', help='Path of the csv file to import', required=True)
 
     def get_data_from_source(self) -> Iterable:
         """
         Gets the use-case/technique data from the source.
-        :return: Iterable, yields technique, detection
+        :return: Iterable, yields technique, detection, applicable_to
         """
         file = self._parameters['file']
         print(f'Reading data from "{file}"')
@@ -116,10 +127,10 @@ class ImportCsv(ImportBase):
             parts = detection.split(',')
             technique = parts[0].strip()
             use_case = parts[1].strip()
-            yield technique, use_case
+            yield technique, use_case, None
 
 
-class ImportExcel(ImportBase):
+class TechniqueExcel(TechniqueBase):
     """
     Import data from an Excel file, having a worksheet with two columns: TechniqueId and UseCase
     """
@@ -127,7 +138,7 @@ class ImportExcel(ImportBase):
     def __init__(self, parameters: dict) -> None:
         super().__init__(parameters)
         if 'file' not in self._parameters:
-            raise Exception('ImportExcel: "file" parameter is required.')
+            raise Exception('TechniqueExcel: "file" parameter is required.')
 
     @staticmethod
     def set_plugin_params(parser: ArgumentParser) -> None:
@@ -135,12 +146,14 @@ class ImportExcel(ImportBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
+        TechniqueBase.set_plugin_params(parser)
+
         parser.add_argument('--file', help='Path of the Excel file to import', required=True)
 
     def get_data_from_source(self) -> Iterable:
         """
         Gets the use-case/technique data from the source.
-        :return: Iterable, yields technique, detection
+        :return: Iterable, yields technique, detection, applicable_to
         """
         file = self._parameters['file']
         print(f'Reading data from "{file}"')
@@ -153,10 +166,10 @@ class ImportExcel(ImportBase):
             techniques = sheet.cell(row=rowNumber, column=1).value
             detection = sheet.cell(row=rowNumber, column=2).value
             for technique in techniques.split(','):
-                yield technique.strip(), detection
+                yield technique.strip(), detection, None
 
 
-class ImportAzureAuthBase(ImportBase):
+class TechniqueAzureAuthBase(TechniqueBase):
     """
     Base class for import plugins that authenticate against Azure AD
     """
@@ -180,6 +193,8 @@ class ImportAzureAuthBase(ImportBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
+        TechniqueBase.set_plugin_params(parser)
+
         parser.add_argument('--app_id', help='Azure application id', required=True)
         parser.add_argument('--tenant_id', help='Azure tenant id', required=True)
         parser.add_argument('--secret', help='Azure client secret')
@@ -187,7 +202,7 @@ class ImportAzureAuthBase(ImportBase):
     def get_data_from_source(self) -> Iterable:
         """
          Gets the use-case/technique data from the source.
-         :return: Iterable, yields technique, detection
+         :return: Iterable, yields technique, detection, applicable_to
          """
         raise NotImplementedError()
 
@@ -198,22 +213,22 @@ class ImportAzureAuthBase(ImportBase):
             return Azure.connect_device_flow(self._app_id, self._tenant_id, endpoint)
 
 
-class ImportSentinelAlertRules(ImportAzureAuthBase):
+class TechniqueSentinelAlertRules(TechniqueAzureAuthBase):
     """
-    Import Analytics Rules from the Sentinel API
+    Import Analytics Rules from the Sentinel API.
     """
 
     def __init__(self, parameters: dict) -> None:
         super().__init__(parameters)
 
         if 'subscription_id' not in self._parameters:
-            raise Exception('ImportSentinelAlertRules: "subscription_id" parameter is required.')
+            raise Exception('TechniqueSentinelAlertRules: "subscription_id" parameter is required.')
 
         if 'resource_group' not in self._parameters:
-            raise Exception('ImportSentinelAlertRules: "resource_group" parameter is required.')
+            raise Exception('TechniqueSentinelAlertRules: "resource_group" parameter is required.')
 
         if 'workspace' not in self._parameters:
-            raise Exception('ImportSentinelAlertRules: "workspace" parameter is required.')
+            raise Exception('TechniqueSentinelAlertRules: "workspace" parameter is required.')
 
         self._subscription_id = self._parameters['subscription_id']
         self._resource_group = self._parameters['resource_group']
@@ -226,7 +241,7 @@ class ImportSentinelAlertRules(ImportAzureAuthBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
-        ImportAzureAuthBase.set_plugin_params(parser)
+        TechniqueAzureAuthBase.set_plugin_params(parser)
 
         parser.add_argument('--subscription_id', help='Azure subscription id for Sentinel', required=True)
         parser.add_argument('--resource_group', help='Azure resource group for Sentinel', required=True)
@@ -235,7 +250,7 @@ class ImportSentinelAlertRules(ImportAzureAuthBase):
     def get_data_from_source(self) -> Iterable:
         """
          Gets the use-case/technique data from the source.
-         :return: Iterable, yields technique, detection
+         :return: Iterable, yields technique, detection, applicable_to
          """
         access_token = self._connect_to_azure(self._endpoint)
         sentinel_data = self._get_sentinel_data(access_token)
@@ -246,7 +261,7 @@ class ImportSentinelAlertRules(ImportAzureAuthBase):
             if 'techniques' in properties and properties['techniques']:
                 for technique in properties['techniques']:
                     use_case = properties['displayName']
-                    yield technique, use_case
+                    yield technique, use_case, None
 
     def _get_sentinel_data(self, access_token: str) -> list:
         """
@@ -268,7 +283,7 @@ class ImportSentinelAlertRules(ImportAzureAuthBase):
         if response.status_code != requests.codes['ok']:
             # Raise an exception to handle hitting API limits
             if response.status_code == requests.codes['too_many_requests']:
-                raise ConnectionRefusedError('ImportSentinelAlerts: You have likely hit the API limit. ')
+                raise ConnectionRefusedError('TechniqueSentinelAlertRules: You have likely hit the API limit. ')
             response.raise_for_status()
 
         json_response = response.json()
@@ -277,7 +292,7 @@ class ImportSentinelAlertRules(ImportAzureAuthBase):
         return result
 
 
-class ImportDefenderIdentityRules(ImportBase):
+class TechniqueDefenderIdentityRules(TechniqueBase):
     """
     Import rules for Microsoft Defender for Identity from their Github webpage:
     https://github.com/MicrosoftDocs/ATADocs/tree/master/ATPDocs
@@ -300,12 +315,12 @@ class ImportDefenderIdentityRules(ImportBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
-        pass
+        TechniqueBase.set_plugin_params(parser)
 
     def get_data_from_source(self) -> Iterable:
         """
         Gets the use-case/technique data from the source.
-        :return: Iterable, yields technique, detection
+        :return: Iterable, yields technique, detection, applicable_to
         """
         for source_url in self.ATP_DOCS:
             resp = requests.get(source_url)
@@ -333,20 +348,20 @@ class ImportDefenderIdentityRules(ImportBase):
                         tech_match = regex_tech.findall(line)
                         if tech_match:
                             for t in tech_match:
-                                yield t, current_detection
+                                yield t, current_detection, None
                     elif 'MITRE attack sub-technique' in line and 'N/A' in line:
                         current_detection = None
                     elif 'MITRE attack sub-technique' in line:
                         subtech_match = regex_subtech.findall(line)
                         if subtech_match:
                             for t in subtech_match:
-                                yield t, current_detection
+                                yield t, current_detection, None
                             current_detection = None
 
 
-class ImportDefenderAlerts(ImportAzureAuthBase):
+class TechniqueDefenderAlerts(TechniqueAzureAuthBase):
     """
-    Import alerts and techniques from the Microsft Defender API.
+    Import alerts and techniques from the Microsoft Defender API.
     """
     def __init__(self, parameters: dict) -> None:
         super().__init__(parameters)
@@ -356,7 +371,7 @@ class ImportDefenderAlerts(ImportAzureAuthBase):
     def get_data_from_source(self) -> Iterable:
         """
         Gets the use-case/technique data from the source.
-        :return: Iterable, yields technique, detection
+        :return: Iterable, yields technique, detection, applicable_to
         """
         access_token = self._connect_to_azure(self._endpoint)
         defender_data = self._get_defender_data(access_token)
@@ -364,7 +379,7 @@ class ImportDefenderAlerts(ImportAzureAuthBase):
         for record in defender_data:
             technique = record['TechniqueId']
             use_case = record['Title'].strip()
-            yield technique, use_case
+            yield technique, use_case, None
 
     @staticmethod
     def _get_defender_data(access_token: str) -> dict:
@@ -396,7 +411,7 @@ class ImportDefenderAlerts(ImportAzureAuthBase):
         if response.status_code != requests.codes['ok']:
             # Raise an exception to handle hitting API limits
             if response.status_code == requests.codes['too_many_requests']:
-                raise ConnectionRefusedError('ImportDefenderAlerts: You have likely hit the API limit. ')
+                raise ConnectionRefusedError('TechniqueDefenderAlerts: You have likely hit the API limit. ')
             response.raise_for_status()
 
         json_response = response.json()
@@ -405,7 +420,7 @@ class ImportDefenderAlerts(ImportAzureAuthBase):
         return result
 
 
-class ImportTaniumSignals(ImportBase):
+class TechniqueTaniumSignals(TechniqueBase):
     """
     Class for importing signals with ATT&CK technique mapping from Tanium.
     """
@@ -413,13 +428,13 @@ class ImportTaniumSignals(ImportBase):
         super().__init__(parameters)
 
         if 'host' not in self._parameters:
-            raise Exception('ImportTaniumSignals: "host" parameter is required.')
+            raise Exception('TechniqueTaniumSignals: "host" parameter is required.')
         if 'user' not in self._parameters:
-            raise Exception('ImportTaniumSignals: "user" parameter is required.')
+            raise Exception('TechniqueTaniumSignals: "user" parameter is required.')
         if 'password' not in self._parameters:
-            raise Exception('ImportTaniumSignals: "password" parameter is required.')
+            raise Exception('TechniqueTaniumSignals: "password" parameter is required.')
         if 'search_prefix' not in self._parameters:
-            raise Exception('ImportTaniumSignals: "search_prefix" parameter is required.')
+            raise Exception('TechniqueTaniumSignals: "search_prefix" parameter is required.')
 
         self._host = self._parameters['host']
         self._user = self._parameters['user']
@@ -436,6 +451,8 @@ class ImportTaniumSignals(ImportBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
+        TechniqueBase.set_plugin_params(parser)
+
         parser.add_argument('--host', help='Tanium host', required=True)
         parser.add_argument('--user', help='Tanium API username', required=True)
         parser.add_argument('--password', help='Tanium API password', required=True)
@@ -444,7 +461,7 @@ class ImportTaniumSignals(ImportBase):
     def get_data_from_source(self) -> Iterable:
         """
         Gets the use-case/technique data from the source.
-        :return: Iterable, yields technique, detection
+        :return: Iterable, yields technique, detection, applicable_to
         """
         tanium_data = self._get_all_signals()
 
@@ -455,7 +472,7 @@ class ImportTaniumSignals(ImportBase):
                 for t in signal_techniques['techniques']:
                     technique = t['id']
                     use_case = signal['name']
-                    yield technique, use_case
+                    yield technique, use_case, None
 
     def _get_all_signals(self) -> dict:
         """
@@ -467,10 +484,10 @@ class ImportTaniumSignals(ImportBase):
         if r.status_code == requests.codes.ok:
             return r.json()
         else:
-            raise Exception(f'ImportTaniumSignals: get all signals failed: {r.text}')
+            raise Exception(f'TechniqueTaniumSignals: get all signals failed: {r.text}')
 
 
-class ImportElasticSecurityRules(ImportBase):
+class TechniqueElasticSecurityRules(TechniqueBase):
     """
     Class for importing Elastic Security rules with ATT&CK technique mapping.
     """
@@ -478,11 +495,11 @@ class ImportElasticSecurityRules(ImportBase):
         super().__init__(parameters)
 
         if 'host' not in self._parameters:
-            raise Exception('ImportElasticSecurityRules: "host" parameter is required.')
+            raise Exception('TechniqueElasticSecurityRules: "host" parameter is required.')
         if 'user' not in self._parameters:
-            raise Exception('ImportElasticSecurityRules: "user" parameter is required.')
+            raise Exception('TechniqueElasticSecurityRules: "user" parameter is required.')
         if 'password' not in self._parameters:
-            raise Exception('ImportElasticSecurityRules: "password" parameter is required.')
+            raise Exception('TechniqueElasticSecurityRules: "password" parameter is required.')
 
         self._host = self._parameters['host']
         self._user = self._parameters['user']
@@ -496,6 +513,8 @@ class ImportElasticSecurityRules(ImportBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
+        TechniqueBase.set_plugin_params(parser)
+
         parser.add_argument('--host', help='Elastic Security host', required=True)
         parser.add_argument('--user', help='Elastic Security username', required=True)
         parser.add_argument('--password', help='Elastic Security password', required=True)
@@ -504,7 +523,7 @@ class ImportElasticSecurityRules(ImportBase):
     def get_data_from_source(self) -> Iterable:
         """
         Gets the use-case/technique data from the source.
-        :return: Iterable, yields technique, detection
+        :return: Iterable, yields technique, detection, applicable_to
         """
         rule_data = self._get_all_rules()
 
@@ -517,11 +536,11 @@ class ImportElasticSecurityRules(ImportBase):
                                 for subtech in tech['subtechnique']:
                                     technique = subtech['id']
                                     use_case = rule['name']
-                                    yield technique, use_case
+                                    yield technique, use_case, None
                             else:
                                 technique = tech['id']
                                 use_case = rule['name']
-                                yield technique, use_case
+                                yield technique, use_case, None
 
     def _get_all_rules(self):
         headers = {'kbn-xsrf': 'dettect', 'Content-Type': 'application/json'}
@@ -532,10 +551,10 @@ class ImportElasticSecurityRules(ImportBase):
         if r.status_code == requests.codes.ok:
             return r.json()
         else:
-            raise Exception(f'ImportElasticSecurityRules: get all rules failed: {r.text}')
+            raise Exception(f'TechniqueElasticSecurityRules: get all rules failed: {r.text}')
 
 
-class ImportSuricataRules(ImportBase):
+class TechniqueSuricataRules(TechniqueBase):
     """
     Import data from a Suricata rules file. It expects a metadata meta-setting containing a field with the name
     mitre_technique_id containing the ATT&CK technique ID.
@@ -553,7 +572,7 @@ class ImportSuricataRules(ImportBase):
     def __init__(self, parameters: dict) -> None:
         super().__init__(parameters)
         if 'file' not in self._parameters:
-            raise Exception('ImportSuricateRules: "file" parameter is required.')
+            raise Exception('TechniqueSuricataRules: "file" parameter is required.')
 
     @staticmethod
     def set_plugin_params(parser: ArgumentParser) -> None:
@@ -561,12 +580,14 @@ class ImportSuricataRules(ImportBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
+        TechniqueBase.set_plugin_params(parser)
+
         parser.add_argument('--file', help='Path of the Suricate rules file to import', required=True)
 
     def get_data_from_source(self) -> Iterable:
         """
         Gets the use-case/technique data from the source.
-        :return: Iterable, yields technique, detection
+        :return: Iterable, yields technique, detection, applicable_to
         """
         file = self._parameters['file']
         print(f'Reading data from "{file}"')
@@ -580,9 +601,10 @@ class ImportSuricataRules(ImportBase):
                     if option.name == 'metadata':
                         meta_data = self._convert_metadata_list_to_dict(option.value.data)
                         if 'mitre_technique_id' in meta_data.keys():
-                            yield meta_data['mitre_technique_id'], rule.msg
+                            yield meta_data['mitre_technique_id'], rule.msg, None
 
-    def _convert_metadata_list_to_dict(self, meta_data: list) -> dict:
+    @staticmethod
+    def _convert_metadata_list_to_dict(meta_data: list) -> dict:
         """
         Converts a list with "key<space>value" into a dictionary.
         """
@@ -592,7 +614,53 @@ class ImportSuricataRules(ImportBase):
             meta_data_dict[splitted[0]] = splitted[1]
         return meta_data_dict
 
-class ImportSigmaRules(ImportBase):
+
+class TechniqueSuricataRulesSummarized(TechniqueSuricataRules):
+    """
+    Import data from a Suricata rules file. It expects a metadata meta-setting containing a field with the name
+    mitre_technique_id containing the ATT&CK technique ID. This plugin summarizes all rules instead of naming all
+    rules like in TechniqueSuricataRules plugin.
+
+    https://suricata.readthedocs.io/en/latest/rules/meta.html#metadata
+
+    Example (taken from https://rules.emergingthreats.net/open/suricata/rules/emerging-hunting.rules):
+    alert http $HOME_NET any -> $EXTERNAL_NET any (msg:"ET HUNTING Possible Phishing - Form submitted to submit-form Form Hosting";
+    flow:established,to_server; http.method; content:"POST"; http.host; content:"submit-form.com"; endswith; classtype:credential-theft;
+    sid:2030707; rev:2; metadata:affected_product Web_Browsers, attack_target Client_Endpoint, created_at 2020_08_20, deployment Perimeter,
+    former_category HUNTING, signature_severity Critical, tag Phishing, updated_at 2020_08_20, mitre_tactic_id TA0001, mitre_tactic_name Initial_Access,
+    mitre_technique_id T1566, mitre_technique_name Phishing;)
+    """
+
+    def __init__(self, parameters: dict) -> None:
+        super().__init__(parameters)
+
+    def get_data_from_source(self) -> Iterable:
+        """
+        Gets the use-case/technique data from the source.
+        :return: Iterable, yields technique, detection, applicable_to
+        """
+        file = self._parameters['file']
+        print(f'Reading data from "{file}"')
+
+        from suricataparser import parse_file
+        rules = parse_file(file)
+
+        summary = {}
+        for rule in rules:
+            if rule.enabled:
+                for option in rule.options:
+                    if option.name == 'metadata':
+                        meta_data = self._convert_metadata_list_to_dict(option.value.data)
+                        if 'mitre_technique_id' in meta_data.keys():
+                            if meta_data['mitre_technique_id'] not in summary.keys():
+                                summary[meta_data['mitre_technique_id']] = 0
+                            summary[meta_data['mitre_technique_id']] += 1
+
+        for tech_id, count in summary.items():
+            yield tech_id, f'Suricata rules: #{count}', None
+
+
+class TechniqueSigmaRules(TechniqueBase):
     """
     Import data from a folder with Sigma rules.
     """
@@ -600,7 +668,7 @@ class ImportSigmaRules(ImportBase):
     def __init__(self, parameters: dict) -> None:
         super().__init__(parameters)
         if 'folder' not in self._parameters:
-            raise Exception('ImportSigmaRules: "folder" parameter is required.')
+            raise Exception('TechniqueSigmaRules: "folder" parameter is required.')
 
     @staticmethod
     def set_plugin_params(parser: ArgumentParser) -> None:
@@ -608,17 +676,19 @@ class ImportSigmaRules(ImportBase):
         Set command line arguments specific for the plugin
         :param parser: Argument parser
         """
+        TechniqueBase.set_plugin_params(parser)
+
         parser.add_argument('--folder', help='Path of the folder with Sigma rules to import', required=True)
 
     def get_data_from_source(self) -> Iterable:
         """
         Gets the use-case/technique data from the source.
-        :return: Iterable, yields technique, detection
+        :return: Iterable, yields technique, detection, applicable_to
         """
         folder = self._parameters['folder']
 
         if not os.path.isdir(folder):
-            raise Exception(f'Folder does not exist: {folder}')
+            raise Exception(f'TechniqueSigmaRules: Folder does not exist: {folder}')
 
         from ruamel.yaml import YAML
 
@@ -633,9 +703,74 @@ class ImportSigmaRules(ImportBase):
                         with open(filename, 'r') as yaml_file:
                             yaml_content = yaml.load(yaml_file)
                     except Exception as e:
-                        raise Exception(f'Failed loading YAML file "{filename}". Error: {str(e)}') from e
+                        raise Exception(f'TechniqueSigmaRules: Failed loading YAML file "{filename}". Error: {str(e)}') from e
 
                     if 'tags' in yaml_content.keys():
                         for tag in yaml_content['tags']:
                             if tag.startswith('attack.t'):
-                                yield tag[7:].upper(), yaml_content['title']
+                                yield tag[7:].upper(), yaml_content['title'], None
+
+
+class TechniqueSplunkConfigSearches(TechniqueBase):
+    """
+    Import data from a Splunk config that contains saved searches (savedsearches.conf). It uses
+    the action.correlationsearch.annotations attribute to get the mitre_attack techniques:
+
+    action.correlationsearch.annotations = {"mitre_attack": ["T1560.001", "T1560"]}
+
+    Searches that contain an action.correlationsearch.label and don't have disabled=1 are included.
+    """
+
+    def __init__(self, parameters: dict) -> None:
+        super().__init__(parameters)
+        if 'file' not in self._parameters:
+            raise Exception('TechniqueSplunkConfigSearches: "file" parameter is required.')
+
+    @staticmethod
+    def set_plugin_params(parser: ArgumentParser) -> None:
+        """
+        Set command line arguments specific for the plugin
+        :param parser: Argument parser
+        """
+        TechniqueBase.set_plugin_params(parser)
+
+        parser.add_argument('--file', help='Path of the savedsearches config file to import', required=True)
+
+    def get_data_from_source(self) -> Iterable:
+        """
+        Gets the use-case/technique data from the source.
+        :return: Iterable, yields technique, detection, applicable_to
+        """
+        file = self._parameters['file']
+        print(f'Reading data from "{file}"')
+
+        import addonfactory_splunk_conf_parser_lib as splunk_conf_parser
+
+        with open(file, "r") as f:
+            splunk_config = splunk_conf_parser.TABConfigParser()
+            splunk_config.read_file(f)
+
+        # Read the default value for disabled attribute:
+        default_disabled = '0'
+        if 'default' in splunk_config.sections():
+            if 'disabled' in splunk_config['default'].keys():
+                default_disabled = splunk_config['default']['disabled']
+
+        ignore_list = ['default']
+        for section in splunk_config.sections():
+            # Ignore some searches:
+            if splunk_config[section].name in ignore_list \
+               or 'action.correlationsearch.label' not in splunk_config[section].keys() \
+               or 'action.correlationsearch.annotations' not in splunk_config[section].keys() \
+               or ('disabled' in splunk_config[section].keys() and splunk_config[section]['disabled'] == '1') \
+               or ('disabled' not in splunk_config[section].keys() and default_disabled == '1'):
+                continue
+
+            try:
+                annotations = json.loads(splunk_config[section]['action.correlationsearch.annotations'])
+            except Exception as e:
+                print(f'Could not parse mitre_attack entry in action.correlationsearch.annotations ({str(e)}): {splunk_config[section].name}')
+            else:
+                if 'mitre_attack' in annotations.keys():
+                    for technique in annotations['mitre_attack']:
+                        yield technique, splunk_config[section].name, None
