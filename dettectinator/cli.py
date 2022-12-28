@@ -153,7 +153,7 @@ class CommandLine:
             else:
                 print(f'data import plugin "{plugin_name}" does not exist. Valid plugins:')
                 self._print_plugins(plugins)
-                sys.exit()
+                sys.exit(1)
 
             # Add the default command line params
             parser = ArgumentParser(add_help=True, conflict_handler='error', )
