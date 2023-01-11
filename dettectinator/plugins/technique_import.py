@@ -59,7 +59,7 @@ class TechniqueBase:
         """
         Retrieves use-case/technique data from a data source
         :param default_applicable_to: Default value for systems that the detections are applicable to (can be overrule from source)
-        :return: Dictionary, example: {'Detection A': {'applicable_to': ['all'], 'location_prefix': 'SIEM', 'techniques': ['T1055']}}
+        :return: Dictionary, example: {'Detection A': [{'applicable_to': ['all'], 'location_prefix': 'SIEM', 'techniques': ['T1055']}]}
         """
 
         use_cases = {}
@@ -76,11 +76,22 @@ class TechniqueBase:
             applicable_to = applicable_to or default_applicable_to
 
             if use_case in use_cases.keys():
-                use_cases[use_case]['techniques'].append(technique)
+                updated = False
+
+                for item in use_cases[use_case]:
+                    if sorted(applicable_to) == sorted(item['applicable_to']):
+                        item['techniques'].append(technique)
+                        updated = True
+                        break
+
+                if not updated:
+                    use_cases[use_case].append({'applicable_to': applicable_to,
+                                            'location_prefix': self._location_prefix,
+                                            'techniques': [technique]})
             else:
-                use_cases[use_case] = {'applicable_to': applicable_to,
+                use_cases[use_case] = [{'applicable_to': applicable_to,
                                        'location_prefix': self._location_prefix,
-                                       'techniques': [technique]}
+                                       'techniques': [technique]}]
 
         return use_cases
 
