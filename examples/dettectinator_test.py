@@ -89,8 +89,8 @@ def techniques_yaml_list(local_stix_path):
     rules['Detection C'] = [{'applicable_to': ['Windows 3.1'], 'location_prefix': 'Splunk', 'techniques': [
         'T1055']}, {'applicable_to': ['all'], 'location_prefix': 'Splunk', 'techniques': ['T1055']}]
     rules['Detection D'] = [{'applicable_to': ['Windows 3.1', 'Windows 97'], 'location_prefix': 'EDR', 'techniques': ['T1055']}]
-    rules['Detection E'] = [{'applicable_to': ['Windows 3.1', 'Windows 97'], 'location_prefix': 'EDR', 'techniques': ['T1561']}]
     rules['Detection F'] = [{'applicable_to': ['Windows 3.1', 'Windows 97'], 'location_prefix': 'EDR', 'techniques': ['T1561']}]
+    rules['Detection E'] = [{'applicable_to': ['Windows 3.1', 'Windows 97'], 'location_prefix': 'EDR', 'techniques': ['T1561']}]
     rules['Detection G'] = [{'applicable_to': ['all'], 'location_prefix': 'EDR', 'techniques': ['T1561']}]
 
     warnings, results = dettect.update_detections(rules, check_unused_detections=True, clean_unused_detections=True,
@@ -108,6 +108,6 @@ if __name__ == '__main__':
     args = menu_parser.parse_args()
     arg_local_stix_path = args.local_stix_path
 
-    techniques_yaml(arg_local_stix_path)
+    # techniques_yaml(arg_local_stix_path)
     techniques_yaml_list(arg_local_stix_path)
-    data_sources_yaml(arg_local_stix_path)
+    # data_sources_yaml(arg_local_stix_path)
