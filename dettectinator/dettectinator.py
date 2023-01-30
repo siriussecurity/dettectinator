@@ -301,7 +301,8 @@ class DettectTechniquesAdministration(DettectBase):
         date_today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
 
         warnings, results = self._add_rules(detection_rules, date_today)
-        w, r = self._delete_rules(detection_rules, check_unused_detections, clean_unused_detections, location_prefix_unused_detections, check_unused_applicable_to, clean_unused_applicable_to, date_today)
+        w, r = self._delete_rules(detection_rules, check_unused_detections, clean_unused_detections,
+                                  location_prefix_unused_detections, check_unused_applicable_to, clean_unused_applicable_to, date_today)
         warnings += w
         results += r
 
@@ -319,7 +320,8 @@ class DettectTechniquesAdministration(DettectBase):
             for technique_id in rule_data['techniques']:
                 attack_technique = self._get_technique_from_attack(technique_id)
                 if attack_technique is None:
-                    warnings.append(f'Technique "{technique_id}" listed in detection rule "{rule_name}" does not exist in ATT&CK ({self.domain}). Skipping.')
+                    warnings.append(
+                        f'Technique "{technique_id}" listed in detection rule "{rule_name}" does not exist in ATT&CK ({self.domain}). Skipping.')
                     continue
 
                 location = rule_name if rule_data['location_prefix'] == '' else rule_data['location_prefix'] + ': ' + rule_name
@@ -356,7 +358,8 @@ class DettectTechniquesAdministration(DettectBase):
                                             'score': self._get_latest_score(d),
                                             'comment': f'Auto added by Dettectinator. TODO: Check score. Detection rule added: {rule_name}'
                                         })
-                                        results.append(f'Check score for technique {technique_id}. Detection rule(s) added for applicable_to {d["applicable_to"]}.')
+                                        results.append(
+                                            f'Check score for technique {technique_id}. Detection rule(s) added for applicable_to {d["applicable_to"]}.')
 
                                 break
                     else:
@@ -366,7 +369,8 @@ class DettectTechniquesAdministration(DettectBase):
                         new_detection['location'] = [location]
                         new_detection['score_logbook'][0]['date'] = date_today
                         new_detection['score_logbook'][0]['score'] = 1
-                        new_detection['score_logbook'][0]['comment'] = f'Auto added by Dettectinator. TODO: Check score. applicable_to with detection rule added: {rule_name}'
+                        new_detection['score_logbook'][0][
+                            'comment'] = f'Auto added by Dettectinator. TODO: Check score. applicable_to with detection rule added: {rule_name}'
                         yaml_technique['detection'].append(new_detection)
                         results.append(f'Check score for technique {technique_id}. applicable_to is new: {str(rule_data["applicable_to"])}.')
                 else:
@@ -381,7 +385,8 @@ class DettectTechniquesAdministration(DettectBase):
                     new_detection['location'] = [location]
                     new_detection['score_logbook'][0]['date'] = date_today
                     new_detection['score_logbook'][0]['score'] = 1
-                    new_detection['score_logbook'][0]['comment'] = f'Auto added by Dettectinator. TODO: Check score. Technique with detection rule added: {rule_name}'
+                    new_detection['score_logbook'][0][
+                        'comment'] = f'Auto added by Dettectinator. TODO: Check score. Technique with detection rule added: {rule_name}'
                     new_technique['detection'].append(new_detection)
                     new_visibility = deepcopy(YAML_OBJ_VISIBILITY)
                     new_technique['visibility'].append(new_visibility)
@@ -444,12 +449,14 @@ class DettectTechniquesAdministration(DettectBase):
                                     results.append(f'Check score for technique {yaml_technique["technique_id"]}. Detection rule(s) removed.')
                 else:
                     if check_unused_applicable_to and not clean_unused_applicable_to:
-                        warnings.append(f'YAML applicable_to for technique "{yaml_technique["technique_id"]}" not in rules list: {str(detection["applicable_to"])}.')
+                        warnings.append(
+                            f'YAML applicable_to for technique "{yaml_technique["technique_id"]}" not in rules list: {str(detection["applicable_to"])}.')
                     elif check_unused_applicable_to and clean_unused_applicable_to:
                         to_remove.append(detection)
 
             for item in to_remove:
-                warnings.append(f'YAML applicable_to for technique "{yaml_technique["technique_id"]}" not in rules list, so removed: {str(detection["applicable_to"])}.')
+                warnings.append(
+                    f'YAML applicable_to for technique "{yaml_technique["technique_id"]}" not in rules list, so removed: {str(detection["applicable_to"])}.')
                 yaml_technique['detection'].remove(item)
 
         return warnings, results
@@ -462,24 +469,24 @@ class DettectTechniquesAdministration(DettectBase):
 
         for d in self._yaml_content['techniques']:
             if 'detection' in d:
+                # There is just one detection entry, make it a list:
+                if isinstance(d['detection'], dict):
+                    d['detection'] = [d['detection']]
+
                 # Add detection items:
-                if isinstance(d['detection'], dict):  # There is just one detection entry
-                    d['detection'] = self._set_yaml_dv_comments(d['detection'])
-                    self._add_entry_to_list_in_dictionary(my_techniques, d['technique_id'], 'detection', d['detection'])
-                elif isinstance(d['detection'], list):  # There are multiple detection entries
-                    for de in d['detection']:
-                        de = self._set_yaml_dv_comments(de)
-                        self._add_entry_to_list_in_dictionary(my_techniques, d['technique_id'], 'detection', de)
+                for de in d['detection']:
+                    de = self._set_yaml_dv_comments(de)
+                    self._add_entry_to_list_in_dictionary(my_techniques, d['technique_id'], 'detection', de)
 
             if 'visibility' in d:
+                # There is just one detection entry, make it a list:
+                if isinstance(d['visibility'], dict):
+                    d['visibility'] = [d['visibility']]
+
                 # Add visibility items
-                if isinstance(d['visibility'], dict):  # There is just one visibility entry
-                    d['visibility'] = self._set_yaml_dv_comments(d['visibility'])
-                    self._add_entry_to_list_in_dictionary(my_techniques, d['technique_id'], 'visibility', d['visibility'])
-                elif isinstance(d['visibility'], list):  # There are multiple visibility entries
-                    for de in d['visibility']:
-                        de = self._set_yaml_dv_comments(de)
-                        self._add_entry_to_list_in_dictionary(my_techniques, d['technique_id'], 'visibility', de)
+                for de in d['visibility']:
+                    de = self._set_yaml_dv_comments(de)
+                    self._add_entry_to_list_in_dictionary(my_techniques, d['technique_id'], 'visibility', de)
 
         self.techniques = my_techniques
 
@@ -618,7 +625,8 @@ class DettectDataSourcesAdministration(DettectBase):
                     if a not in self._system_applicable_to_values:
                         self._yaml_content['systems'].append({'applicable_to': a, 'platform': ['all']})
                         self._system_applicable_to_values.append(a)
-                        results.append(f'Applicable_to value "{str(data_source_data["applicable_to"])}" of data source "{data_source_name}" not in systems object of data source YAML file. Added to systems object with platform=all. Please review this new entry.')
+                        results.append(
+                            f'Applicable_to value "{str(data_source_data["applicable_to"])}" of data source "{data_source_name}" not in systems object of data source YAML file. Added to systems object with platform=all. Please review this new entry.')
 
                 # Check if applicable_to is already there:
                 applicable_to_list = [d['applicable_to'] for d in yaml_data_source['data_source']]
@@ -631,9 +639,11 @@ class DettectDataSourcesAdministration(DettectBase):
                     new_data_source['products'] = data_source_data['products']
                     new_data_source['available_for_data_analytics'] = data_source_data['available_for_data_analytics']
                     default_scores, scores_changed = self._set_data_quality(new_data_source, data_source_data)
-                    new_data_source['comment'] = 'Auto added by Dettectinator.' + (' TODO: Check data quality scores, default values used.' if default_scores else '')
+                    new_data_source['comment'] = 'Auto added by Dettectinator.' + \
+                        (' TODO: Check data quality scores, default values used.' if default_scores else '')
                     yaml_data_source['data_source'].append(new_data_source)
-                    results.append(f'Check data quality scores for data source {data_source_name}. applicable_to is new: {str(data_source_data["applicable_to"])}')
+                    results.append(
+                        f'Check data quality scores for data source {data_source_name}. applicable_to is new: {str(data_source_data["applicable_to"])}')
                 else:
                     # applicable_to present, get the object and update:
                     for data_source in yaml_data_source['data_source']:
@@ -650,7 +660,8 @@ class DettectDataSourcesAdministration(DettectBase):
                                 changed = True
                             if changed:
                                 data_source['comment'] = 'Auto updated by Dettectinator. TODO: Check data quality scores.'
-                                results.append(f'Check data quality scores for data source {data_source_name}. Data source with applicable_to {str(data_source_data["applicable_to"])} is updated.')
+                                results.append(
+                                    f'Check data quality scores for data source {data_source_name}. Data source with applicable_to {str(data_source_data["applicable_to"])} is updated.')
                             break
 
         return warnings, results
@@ -681,7 +692,8 @@ class DettectDataSourcesAdministration(DettectBase):
                 for app_to in applicable_to_yaml:
                     if str(app_to['applicable_to']) not in applicable_to_ds:
                         yaml_data_source['data_source'].remove(app_to)
-                        warnings.append(f'YAML applicable_to value "{str(app_to["applicable_to"])}" of data source "{yaml_data_source["data_source_name"]}" not in given data sources list, so removed.')
+                        warnings.append(
+                            f'YAML applicable_to value "{str(app_to["applicable_to"])}" of data source "{yaml_data_source["data_source_name"]}" not in given data sources list, so removed.')
             else:
                 # Data source in YAML but not in data_sources list. So remove.
                 if not clean_unused_data_sources:
@@ -754,5 +766,5 @@ class DettectDataSourcesAdministration(DettectBase):
 if __name__ == '__main__':
     # Where being run from the command line here, start CLI logic
     cli_mod = importlib.import_module('cli')
-    cli= getattr(cli_mod, 'CommandLine')()
+    cli = getattr(cli_mod, 'CommandLine')()
     cli.start()
