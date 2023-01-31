@@ -353,9 +353,11 @@ class DettectTechniquesAdministration(DettectBase):
                                             break
 
                                     if not today_found:
+                                        score = self._get_latest_score(d)
+                                        score = 1 if score == -1 else score
                                         d['score_logbook'].append({
                                             'date': date_today,
-                                            'score': self._get_latest_score(d),
+                                            'score': score,
                                             'comment': f'Auto added by Dettectinator. TODO: Check score. Detection rule added: {rule_name}'
                                         })
                                         results.append(
