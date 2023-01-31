@@ -344,6 +344,9 @@ class DettectTechniquesAdministration(DettectBase):
                                 if not rule_exist:
                                     d['location'].append(location)
 
+                                    if len(d['score_logbook']) == 1 and d['score_logbook'][0]['date'] is None and d['score_logbook'][0]['score'] == -1:
+                                        d['score_logbook'] = []
+
                                     # Check if score_logbook already has entry for today:
                                     today_found = False
                                     for logbook_entry in d['score_logbook']:
@@ -354,7 +357,7 @@ class DettectTechniquesAdministration(DettectBase):
 
                                     if not today_found:
                                         score = self._get_latest_score(d)
-                                        score = 1 if score == -1 else score
+                                        score = 1 if score == -1 or score is None else score
                                         d['score_logbook'].append({
                                             'date': date_today,
                                             'score': score,
