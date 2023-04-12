@@ -336,7 +336,7 @@ class DettectTechniquesAdministration(DettectBase):
                                 # Check if detection rule is in location field:
                                 rule_exist = False
                                 for loc in d['location']:
-                                    if rule_name in loc:
+                                    if location in loc:
                                         rule_exist = True
                                         break
 
