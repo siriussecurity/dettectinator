@@ -434,7 +434,7 @@ class DettectTechniquesAdministration(DettectBase):
                                 warnings.append('Rule from YAML not found in rules list: ' + loc)
                             elif check_unused_detections and clean_unused_detections:
                                 detection['location'].remove(loc)
-                                score = 0 if len(detection['location']) == 0 else self._get_latest_score(detection)
+                                score = -1 if len(detection['location']) == 0 else self._get_latest_score(detection)
 
                                 # Check if score_logbook already has entry for today:
                                 today_found = False
