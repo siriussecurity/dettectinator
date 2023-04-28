@@ -81,7 +81,8 @@ class CommandLine:
         parser.add_argument('-s', '--stix_location', help='Local STIX repository location.', default=None)
 
         parser.add_argument('-ch', '--check_unused', action='store_true', help='Check unused detections.')
-        parser.add_argument('-cl', '--clean_unused', action='store_true', help='Clean unused detections.')
+        parser.add_argument('-cl', '--clean_unused', action='store_true',
+                            help='Clean unused detections. When using this option, including the check_unused option is necessary.')
 
     def _get_argument_values_from_config_file(self) -> dict:
         """
