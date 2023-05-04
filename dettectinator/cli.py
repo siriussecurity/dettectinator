@@ -12,8 +12,7 @@ import os
 import importlib
 import inspect
 
-from dettectinator import DettectTechniquesAdministration, DettectDataSourcesAdministration, \
-    DettectGroupsAdministration
+from dettectinator import DettectTechniquesAdministration, DettectDataSourcesAdministration, DettectGroupsAdministration
 from plugins.technique_import import TechniqueBase
 from plugins.datasources_import import DatasourceBase
 from plugins.groups_import import GroupBase
@@ -71,9 +70,8 @@ class CommandLine:
         required = parser.add_argument_group('required arguments')
         parser.add_argument('-c', '--config', help='Configuration file location.')
         required.add_argument('-p', '--plugin', help='Data import plugin name.', required=True)
-        required.add_argument('-a', '--applicable_to',
-                              help='Systems that the detections are applicable to (comma seperated list).',
-                              required=True)
+        parser.add_argument('-a', '--applicable_to',
+                            help='Systems that the detections are applicable to (comma seperated list).')
         parser.add_argument('-d', '--domain',
                             help='The ATT&CK domain (default = enterprise). This argument is ignored if a domain is specified in the YAML file.',
                             required=False, choices=['enterprise', 'ics', 'mobile'])
@@ -188,7 +186,7 @@ class CommandLine:
 
             # Evaluate command line arguments
             arguments = parser.parse_args()
-            applicable_to = [at.strip() for at in arguments.applicable_to.split(',')]
+            applicable_to = [at.strip() for at in arguments.applicable_to.split(',')] if arguments.applicable_to else []
             output_file = arguments.output_file or arguments.input_file
 
             # Read the data from the source

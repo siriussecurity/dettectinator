@@ -9,6 +9,8 @@ License: GPL-3.0 License
 from argparse import ArgumentParser
 from collections.abc import Iterable
 import urllib3
+import re
+from pypdf import PdfReader
 
 # Disable SSL certificate warnings for dev purposes:
 urllib3.disable_warnings()
@@ -56,7 +58,7 @@ class GroupBase:
 
     def get_data_from_source(self) -> Iterable:
         """
-        Gets the use-case/technique data from the source.
+        Retrieves group/technique/software data from the source
         :return: Iterable, yields group, campaign, techniques, software
         """
         raise NotImplementedError()
@@ -69,7 +71,7 @@ class GroupFoo(GroupBase):
 
     def get_data_from_source(self) -> Iterable:
         """
-        Gets the use-case/technique data from the source.
+        Retrieves group/technique/software data from the source
         :return: Iterable, yields group, campaign, techniques, software
         """
         data = {'APT1': {'campaign': 'P0wn them all', 'techniques': ['T1566.002', 'T1059.001', 'T1053.005'],
@@ -102,7 +104,7 @@ class GroupExcel(GroupBase):
 
     def get_data_from_source(self) -> Iterable:
         """
-        Gets the use-case/technique data from the source.
+        Retrieves group/technique/software data from the source
         :return: Iterable, yields group, campaign, techniques, software
         """
         file = self._parameters['file']
@@ -122,3 +124,52 @@ class GroupExcel(GroupBase):
                     techniques.append(technique)
 
             yield group, None, techniques, []
+
+
+class GroupPdf(GroupBase):
+    """
+    Sample plugin to import data from a PDF. It uses a regular expression to fetch techniques and software
+    """
+
+    def __init__(self, parameters: dict) -> None:
+        super().__init__(parameters)
+        if 'file' not in self._parameters:
+            raise Exception('GroupExcel: "file" parameter is required.')
+
+    @staticmethod
+    def set_plugin_params(parser: ArgumentParser) -> None:
+        """
+        Set command line arguments specific for the plugin
+        :param parser: Argument parser
+        """
+        GroupBase.set_plugin_params(parser)
+
+        parser.add_argument('--file', help='Path of the Excel file to import', required=True)
+
+    def get_data_from_source(self) -> Iterable:
+        """
+        Retrieves group/technique/software data from the source
+        :return: Iterable, yields group, campaign, techniques, software
+        """
+        file = self._parameters['file']
+        print(f'Reading data from "{file}"')
+
+        reader = PdfReader(file)
+
+        text = ''
+        for page in reader.pages:
+            text += f'{page.extract_text()} '
+
+        # Get ATT&CK Technique ID's from the text
+        pattern = r'T[0-9]{4}\.[0-9]{3}|T[0-9]{4}'
+        techniques = self._create_sorted_matches_list(pattern, text)
+
+        # Get ATT&CK Software ID's from the text
+        pattern = r'S[0-9]{4}'
+        software = self._create_sorted_matches_list(pattern, text)
+
+        yield None, None, techniques, software
+
+    @staticmethod
+    def _create_sorted_matches_list(pattern, text):
+        return sorted(list(set([t.strip() for t in re.findall(pattern, text)])))
