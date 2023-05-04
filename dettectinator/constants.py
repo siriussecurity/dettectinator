@@ -75,7 +75,15 @@ YAML_OBJ_NEW_DATA_SOURCES_FILE = {'version': 1.1,
 
 YAML_OBJ_NEW_GROUPS_FILE = {'version': 1.0,
                             'file_type': 'group-administration',
+                            'name': 'new',
                             'domain': 'enterprise-attack',
                             'platform': ['all'],
                             'groups': []
                            }
+
+YAML_OBJ_GROUP = {'group_name': '',
+                  'campaign': '',
+                  'technique_id': [],
+                  'software_id': [],
+                  'enabled': True
+                  }

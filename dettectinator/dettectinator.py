@@ -108,6 +108,10 @@ class DettectBase(object):
             self._yaml_content = deepcopy(YAML_OBJ_NEW_TECHNIQUES_FILE)
             self.filename = f"techniques_{self._yaml_content['name']}.yaml"
             self._yaml_content['domain'] = self.domain
+        elif isinstance(self, DettectGroupsAdministration):
+            self._yaml_content = deepcopy(YAML_OBJ_NEW_GROUPS_FILE)
+            self.filename = f"groups_{self._yaml_content['name']}.yaml"
+            self._yaml_content['domain'] = self.domain
 
     def save_yaml_file(self, filename=None) -> None:
         """
@@ -225,6 +229,41 @@ class DettectBase(object):
             if tech['technique_id'] == technique_id:
                 return tech
         return None
+
+    def _load_attack_software(self) -> None:
+        """
+        Load the ATT&CK STIX data from the MITRE TAXII server.
+        :return: MITRE ATT&CK data object (STIX)
+        """
+        self._attack_software = self._convert_stix_software_to_dict(self.mitre.get_software(skip_revoked_deprecated=True))
+
+    def _get_software_from_attack(self, software_id: str) -> dict:
+        """
+        Return the technique object for the given technique_id.
+        """
+        for software in self._attack_software:
+            if software['software_id'] == software_id:
+                return software
+
+        return None
+
+    @staticmethod
+    def _convert_stix_software_to_dict(stix_attack_data: list) -> list:
+        """
+        Convert the STIX list with AttackPatterns to a dictionary for easier use in python and also include the technique_id and DeTT&CT data sources.
+        :param stix_attack_data: the MITRE ATT&CK STIX dataset with techniques
+        :return: list with dictionaries containing all software from the input stix_attack_data
+        """
+        attack_data = []
+        for stix_software in stix_attack_data:
+            software = json.loads(stix_software.serialize(), object_hook=DettectBase._date_hook)
+
+            # Add software_id as key, because it's hard to get from STIX:
+            software['software_id'] = DettectBase._get_attack_id(stix_software)
+
+            attack_data.append(software)
+
+        return attack_data
 
     @staticmethod
     def _convert_stix_techniques_to_dict(stix_attack_data: list) -> list:
@@ -796,6 +835,67 @@ class DettectDataSourcesAdministration(DettectBase):
         self.data_components = {}
         for data_component in data_components:
             self.data_components[data_component['name'].lower()] = data_component['name']
+
+
+class DettectGroupsAdministration(DettectBase):
+    """
+    Create or modify a DeTT&CT techniques administration YAML file.
+    """
+
+    def __init__(self, filename: str = None, domain: str = None, local_stix_path: str = None) -> None:
+        super(DettectGroupsAdministration, self).__init__(filename, domain, local_stix_path)
+        self._load_attack_software()
+
+    def add_groups(self, groups: dict) -> tuple:
+        """
+        Adds the groups to the YAML file.
+        :param groups: a dictionary containing the group name as key with the following data: campaign, a list with ATT&CK (sub)
+                       techniques and a list with ATT&CK software
+                {'APT1': {'campaign': 'P0wn them all'
+                          'techniques': ['T1566.002','T1059.001', 'T1053.005'],
+                          'software': ['S0002']
+                         }
+                }
+        :return a list with results containing warnings or errors during the update process.
+        """
+        warnings, results = self._add_groups(groups)
+
+        return warnings, results
+
+    def _add_groups(self, groups: dict) -> tuple:
+        """
+        Adds new groups to the groups YAML file.
+        """
+        warnings, results = [], []
+
+        # Loop through all groups:
+        for group_name, group in groups.items():
+            techniques = []
+            software = []
+            for technique_id in group['techniques']:
+                attack_technique = self._get_technique_from_attack(technique_id)
+                if attack_technique is None:
+                    warnings.append(
+                        f'Technique "{technique_id}" listed in group "{group}" does not exist in ATT&CK ({self.domain}). Skipping.')
+                else:
+                    techniques.append(technique_id)
+
+            for software_id in group['software']:
+                attack_software = self._get_software_from_attack(software_id)
+                if attack_software is None:
+                    warnings.append(
+                        f'Software "{software_id}" listed in group "{group}" does not exist in ATT&CK ({self.domain}). Skipping.')
+                else:
+                    software.append(software_id)
+
+            new_group = deepcopy(YAML_OBJ_GROUP)
+            new_group['group_name'] = group_name
+            new_group['campaign'] = group['campaign']
+            new_group['technique_id'] = techniques
+            new_group['software_id'] = software
+            self._yaml_content['groups'].append(new_group)
+
+        return warnings, results
 
 
 if __name__ == '__main__':

@@ -12,9 +12,11 @@ import os
 import importlib
 import inspect
 
-from dettectinator import DettectTechniquesAdministration, DettectDataSourcesAdministration
+from dettectinator import DettectTechniquesAdministration, DettectDataSourcesAdministration, \
+    DettectGroupsAdministration
 from plugins.technique_import import TechniqueBase
 from plugins.datasources_import import DatasourceBase
+from plugins.groups_import import GroupBase
 from argparse import ArgumentParser, Namespace
 
 
@@ -57,7 +59,7 @@ class CommandLine:
         for module in [x for x in os.listdir(path) if x[-3:] == '.py']:
             plugin_mod = importlib.import_module('plugins.' + module[:-3])
             for name, cls in inspect.getmembers(plugin_mod, inspect.isclass):
-                if ('Technique' in name or 'Datasource' in name) and 'Base' not in name:
+                if ('Technique' in name or 'Datasource' in name or 'Group' in name) and 'Base' not in name:
                     import_plugins[name] = plugin_mod
         return import_plugins
 
@@ -130,6 +132,20 @@ class CommandLine:
                                                         clean_unused_data_sources=arguments.clean_unused)
         return dettect, results, warnings
 
+    @staticmethod
+    def process_groups(arguments: Namespace, plugin: GroupBase) -> tuple:
+        """
+        Process all groups from the source
+        """
+        # Get the group data
+        groups = plugin.get_attack_groups()
+        # Convert data to yaml
+        print('Generating groups YAML file.')
+        dettect = DettectGroupsAdministration(arguments.input_file, domain=arguments.domain,
+                                              local_stix_path=arguments.stix_location)
+        warnings, results = dettect.add_groups(groups)
+        return dettect, results, warnings
+
     def start(self) -> None:
         """
         Dettectinator has been started from the commandline.
@@ -181,8 +197,10 @@ class CommandLine:
 
             if plugin_name.startswith('Technique'):
                 dettect, results, warnings = self.process_techniques(applicable_to, arguments, plugin)
-            else:
+            elif plugin_name.startswith('Datasource'):
                 dettect, results, warnings = self.process_datasource(applicable_to, arguments, plugin)
+            else:
+                dettect, results, warnings = self.process_groups(arguments, plugin)
 
             if arguments.name:
                 dettect.set_name(arguments.name)
