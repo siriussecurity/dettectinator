@@ -876,7 +876,7 @@ class DettectGroupsAdministration(DettectBase):
                 attack_technique = self._get_technique_from_attack(technique_id)
                 if attack_technique is None:
                     warnings.append(
-                        f'Technique "{technique_id}" listed in group "{group}" does not exist in ATT&CK ({self.domain}). Skipping.')
+                        f'Technique "{technique_id}" listed in group "{group_name}" does not exist in ATT&CK ({self.domain}). Skipping.')
                 else:
                     techniques.append(technique_id)
 
@@ -884,7 +884,7 @@ class DettectGroupsAdministration(DettectBase):
                 attack_software = self._get_software_from_attack(software_id)
                 if attack_software is None:
                     warnings.append(
-                        f'Software "{software_id}" listed in group "{group}" does not exist in ATT&CK ({self.domain}). Skipping.')
+                        f'Software "{software_id}" listed in group "{group_name}" does not exist in ATT&CK ({self.domain}). Skipping.')
                 else:
                     software.append(software_id)
 
