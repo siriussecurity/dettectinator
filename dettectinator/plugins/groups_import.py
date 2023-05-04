@@ -57,16 +57,68 @@ class GroupBase:
     def get_data_from_source(self) -> Iterable:
         """
         Gets the use-case/technique data from the source.
-        :return: Iterable, yields technique, detection, applicable_to
+        :return: Iterable, yields group, campaign, techniques, software
         """
         raise NotImplementedError()
 
 
 class GroupFoo(GroupBase):
+    """
+    Sample plugin to show what the data should look like.
+    """
 
     def get_data_from_source(self) -> Iterable:
+        """
+        Gets the use-case/technique data from the source.
+        :return: Iterable, yields group, campaign, techniques, software
+        """
         data = {'APT1': {'campaign': 'P0wn them all', 'techniques': ['T1566.002', 'T1059.001', 'T1053.005'],
                          'software': ['S0002']}}
 
         for group, group_data in data.items():
             yield group, group_data['campaign'], group_data['techniques'], group_data['software']
+
+
+class GroupExcel(GroupBase):
+    """
+    Sample plugin to import data from Excel. Each group has its own tab and on that tab
+    the techniques are listed.
+    """
+
+    def __init__(self, parameters: dict) -> None:
+        super().__init__(parameters)
+        if 'file' not in self._parameters:
+            raise Exception('GroupExcel: "file" parameter is required.')
+
+    @staticmethod
+    def set_plugin_params(parser: ArgumentParser) -> None:
+        """
+        Set command line arguments specific for the plugin
+        :param parser: Argument parser
+        """
+        GroupBase.set_plugin_params(parser)
+
+        parser.add_argument('--file', help='Path of the Excel file to import', required=True)
+
+    def get_data_from_source(self) -> Iterable:
+        """
+        Gets the use-case/technique data from the source.
+        :return: Iterable, yields group, campaign, techniques, software
+        """
+        file = self._parameters['file']
+        print(f'Reading data from "{file}"')
+
+        import openpyxl
+        wb = openpyxl.load_workbook(filename=file, data_only=True)
+
+        for sheet in wb.worksheets:
+            group = sheet.title
+            techniques = []
+
+            for rowNumber in range(2, sheet.max_row + 1):
+                technique = sheet.cell(row=rowNumber, column=1).value
+
+                if technique:
+                    techniques.append(technique)
+
+            yield group, None, techniques, []
