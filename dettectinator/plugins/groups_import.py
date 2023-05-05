@@ -63,22 +63,9 @@ class GroupBase:
         """
         raise NotImplementedError()
 
-
-class GroupFoo(GroupBase):
-    """
-    Sample plugin to show what the data should look like.
-    """
-
-    def get_data_from_source(self) -> Iterable:
-        """
-        Retrieves group/technique/software data from the source
-        :return: Iterable, yields group, campaign, techniques, software
-        """
-        data = {'APT1': {'campaign': 'P0wn them all', 'techniques': ['T1566.002', 'T1059.001', 'T1053.005'],
-                         'software': ['S0002']}}
-
-        for group, group_data in data.items():
-            yield group, group_data['campaign'], group_data['techniques'], group_data['software']
+    @staticmethod
+    def _create_unique_sorted_list(items: list) -> list:
+        return sorted(list(set(items)))
 
 
 class GroupExcel(GroupBase):
@@ -105,6 +92,7 @@ class GroupExcel(GroupBase):
     def get_data_from_source(self) -> Iterable:
         """
         Retrieves group/technique/software data from the source
+        See examples/import_group.xlsx for an example Excel file
         :return: Iterable, yields group, campaign, techniques, software
         """
         file = self._parameters['file']
@@ -123,7 +111,7 @@ class GroupExcel(GroupBase):
                 if technique:
                     techniques.append(technique)
 
-            yield group, None, techniques, []
+            yield group, None, self._create_unique_sorted_list(techniques), []
 
 
 class GroupPdf(GroupBase):
@@ -134,7 +122,7 @@ class GroupPdf(GroupBase):
     def __init__(self, parameters: dict) -> None:
         super().__init__(parameters)
         if 'file' not in self._parameters:
-            raise Exception('GroupExcel: "file" parameter is required.')
+            raise Exception('GroupPdf: "file" parameter is required.')
 
     @staticmethod
     def set_plugin_params(parser: ArgumentParser) -> None:
@@ -162,14 +150,10 @@ class GroupPdf(GroupBase):
 
         # Get ATT&CK Technique ID's from the text
         pattern = r'T[0-9]{4}\.[0-9]{3}|T[0-9]{4}'
-        techniques = self._create_sorted_matches_list(pattern, text)
+        techniques = self._create_unique_sorted_list(re.findall(pattern, text))
 
         # Get ATT&CK Software ID's from the text
         pattern = r'S[0-9]{4}'
-        software = self._create_sorted_matches_list(pattern, text)
+        software = self._create_unique_sorted_list(re.findall(pattern, text))
 
         yield None, None, techniques, software
-
-    @staticmethod
-    def _create_sorted_matches_list(pattern, text):
-        return sorted(list(set([t.strip() for t in re.findall(pattern, text)])))

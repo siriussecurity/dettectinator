@@ -104,18 +104,19 @@ def techniques_yaml_list(local_stix_path):
     dettect.save_yaml_file('techniques_updated_list.yaml')
 
 
-def groups_yaml_list(local_stix_path):
+def groups_yaml(local_stix_path):
     """
     Tests the creation of a DeTT&CT groups administration YAML file.
     """
-    # Testing techniques YAML:
+    # Testing groups YAML:
     dettect = DettectGroupsAdministration(local_stix_path=local_stix_path)
 
     groups = {}
     groups['APT1'] = {'campaign': 'P0wn them all', 'techniques': ['T1566.002', 'T1059.001', 'T1053.005'],
                       'software': ['S0002']}
-    groups['APT2'] = {'campaign': 'Sneaky H4x0rs', 'techniques': ['T1055', 'T1561', 'T1529'],
+    groups['APT2'] = {'campaign': 'Sneaky H4x0rs', 'techniques': ['T1055', 'T1561', 'T9999'],
                       'software': ['S0012']}
+
     warnings, results = dettect.add_groups(groups)
 
     output = warnings + results
@@ -132,6 +133,6 @@ if __name__ == '__main__':
     arg_local_stix_path = args.local_stix_path
 
     # techniques_yaml(arg_local_stix_path)
-    #echniques_yaml_list(arg_local_stix_path)
+    # techniques_yaml_list(arg_local_stix_path)
     # data_sources_yaml(arg_local_stix_path)
-    #groups_yaml_list(arg_local_stix_path)
+    groups_yaml(arg_local_stix_path)

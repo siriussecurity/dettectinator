@@ -1,1 +1,1 @@
-from .dettectinator import (DettectBase, DettectTechniquesAdministration, DettectDataSourcesAdministration)
+from .dettectinator import (DettectBase, DettectTechniquesAdministration, DettectDataSourcesAdministration, DettectGroupsAdministration)
