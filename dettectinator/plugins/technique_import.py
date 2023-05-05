@@ -314,11 +314,12 @@ class TechniqueDefenderIdentityRules(TechniqueBase):
     def __init__(self, parameters: dict) -> None:
         super().__init__(parameters)
 
-        self.ATP_DOCS = ['https://raw.githubusercontent.com/MicrosoftDocs/ATADocs/master/ATPDocs/compromised-credentials-alerts.md',
-                         'https://raw.githubusercontent.com/MicrosoftDocs/ATADocs/master/ATPDocs/domain-dominance-alerts.md',
-                         'https://raw.githubusercontent.com/MicrosoftDocs/ATADocs/master/ATPDocs/exfiltration-alerts.md',
+        self.ATP_DOCS = ['https://github.com/MicrosoftDocs/ATADocs/blob/master/ATPDocs/credential-access-alerts.md',
                          'https://raw.githubusercontent.com/MicrosoftDocs/ATADocs/master/ATPDocs/lateral-movement-alerts.md',
-                         'https://raw.githubusercontent.com/MicrosoftDocs/ATADocs/master/ATPDocs/reconnaissance-alerts.md']
+                         'https://raw.githubusercontent.com/MicrosoftDocs/ATADocs/master/ATPDocs/reconnaissance-discovery-alerts.md',
+                         'https://raw.githubusercontent.com/MicrosoftDocs/ATADocs/master/ATPDocs/persistence-privilege-escalation-alerts.md',
+                         'https://raw.githubusercontent.com/MicrosoftDocs/ATADocs/master/ATPDocs/other-alerts.md']
+
 
     @staticmethod
     def set_plugin_params(parser: ArgumentParser) -> None:
