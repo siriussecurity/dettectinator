@@ -5,13 +5,14 @@ Authors:
     Ruben Bouman, Sirius Security
 License: GPL-3.0 License
 """
-
+import datetime
 import json
 import sys
 import os
 import importlib
 import inspect
 
+from collections import OrderedDict
 from dettectinator import DettectTechniquesAdministration, DettectDataSourcesAdministration, DettectGroupsAdministration
 from plugins.technique_import import TechniqueBase
 from plugins.datasources_import import DatasourceBase
@@ -79,7 +80,8 @@ class CommandLine:
         parser.add_argument('-o', '--output_file', help='YAML filename for output.', default=None)
         parser.add_argument('-n', '--name', help='Value for the name attribute in the YAML file.', default=None)
         parser.add_argument('-s', '--stix_location', help='Local STIX repository location.', default=None)
-
+        parser.add_argument('-lf', '--log_file', help='Log to write results and warnings to.', default=None)
+        parser.add_argument('-lp', '--log_parameters', action='store_true', help='Add the configuration parameters to the log.')
         parser.add_argument('-ch', '--check_unused', action='store_true', help='Check unused detections.')
         parser.add_argument('-cl', '--clean_unused', action='store_true', help='Clean unused detections.')
 
@@ -95,6 +97,21 @@ class CommandLine:
         else:
             config_file_arguments = {}
         return config_file_arguments
+
+    @staticmethod
+    def _create_log_file(arguments: Namespace, output: list, plugin_name: str) -> None:
+        sep_single = '-' * 100 + '\n'
+        sep_double = "=" * 100 + '\n'
+        with open(arguments.log_file, 'a') as log_file:
+            log_file.write(sep_double)
+            log_file.write(f'Result from plugin {plugin_name} at {datetime.datetime.now()}:\n')
+            log_file.write(sep_single)
+            if arguments.log_parameters:
+                log_file.writelines([f'{k}: {v}\n' for k, v in OrderedDict(sorted(vars(arguments).items())).items()])
+                log_file.write(sep_single)
+            log_file.writelines([f'{o}\n' for o in output])
+            log_file.write(sep_double)
+            log_file.write('\n')
 
     @staticmethod
     def process_techniques(applicable_to: list, arguments: Namespace, plugin: TechniqueBase) -> tuple:
@@ -206,7 +223,11 @@ class CommandLine:
             dettect.save_yaml_file(output_file)
             print(f'DeTT&CT YAML file written: {dettect.get_filename()}')
 
-            output = warnings + results
+            output = sorted(list(set(warnings + results)))
+
+            if arguments.log_file:
+                self._create_log_file(arguments, output, plugin_name)
+
             if len(output) > 0:
                 print('\nPlease review the following items:')
                 print(' - ' + '\n - '.join(output))
