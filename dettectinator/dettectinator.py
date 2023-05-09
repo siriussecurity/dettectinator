@@ -279,10 +279,6 @@ class DettectBase(object):
             # Add technique_id as key, because it's hard to get from STIX:
             tech['technique_id'] = DettectBase._get_attack_id(stix_tech)
 
-            # Create empty x_mitre_data_sources key for techniques without data sources:
-            if 'x_mitre_data_sources' not in tech.keys():
-                tech['x_mitre_data_sources'] = []
-
             attack_data.append(tech)
 
         return attack_data
