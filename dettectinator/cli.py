@@ -5,16 +5,18 @@ Authors:
     Ruben Bouman, Sirius Security
 License: GPL-3.0 License
 """
-
+import datetime
 import json
 import sys
 import os
 import importlib
 import inspect
 
-from dettectinator import DettectTechniquesAdministration, DettectDataSourcesAdministration
+from collections import OrderedDict
+from dettectinator import DettectTechniquesAdministration, DettectDataSourcesAdministration, DettectGroupsAdministration
 from plugins.technique_import import TechniqueBase
 from plugins.datasources_import import DatasourceBase
+from plugins.groups_import import GroupBase
 from argparse import ArgumentParser, Namespace
 
 
@@ -57,7 +59,7 @@ class CommandLine:
         for module in [x for x in os.listdir(path) if x[-3:] == '.py']:
             plugin_mod = importlib.import_module('plugins.' + module[:-3])
             for name, cls in inspect.getmembers(plugin_mod, inspect.isclass):
-                if ('Technique' in name or 'Datasource' in name) and 'Base' not in name:
+                if ('Technique' in name or 'Datasource' in name or 'Group' in name) and 'Base' not in name:
                     import_plugins[name] = plugin_mod
         return import_plugins
 
@@ -69,9 +71,8 @@ class CommandLine:
         required = parser.add_argument_group('required arguments')
         parser.add_argument('-c', '--config', help='Configuration file location.')
         required.add_argument('-p', '--plugin', help='Data import plugin name.', required=True)
-        required.add_argument('-a', '--applicable_to',
-                              help='Systems that the detections are applicable to (comma seperated list).',
-                              required=True)
+        parser.add_argument('-a', '--applicable_to',
+                            help='Systems that the detections are applicable to (comma seperated list).')
         parser.add_argument('-d', '--domain',
                             help='The ATT&CK domain (default = enterprise). This argument is ignored if a domain is specified in the YAML file.',
                             required=False, choices=['enterprise', 'ics', 'mobile'])
@@ -79,7 +80,8 @@ class CommandLine:
         parser.add_argument('-o', '--output_file', help='YAML filename for output.', default=None)
         parser.add_argument('-n', '--name', help='Value for the name attribute in the YAML file.', default=None)
         parser.add_argument('-s', '--stix_location', help='Local STIX repository location.', default=None)
-
+        parser.add_argument('-lf', '--log_file', help='Log to write results and warnings to.', default=None)
+        parser.add_argument('-lp', '--log_parameters', action='store_true', help='Add the configuration parameters to the log.')
         parser.add_argument('-ch', '--check_unused', action='store_true', help='Check unused detections.')
         parser.add_argument('-cl', '--clean_unused', action='store_true',
                             help='Clean unused detections. When using this option, including the check_unused option is necessary.')
@@ -96,6 +98,21 @@ class CommandLine:
         else:
             config_file_arguments = {}
         return config_file_arguments
+
+    @staticmethod
+    def _create_log_file(arguments: Namespace, output: list, plugin_name: str) -> None:
+        sep_single = '-' * 100 + '\n'
+        sep_double = "=" * 100 + '\n'
+        with open(arguments.log_file, 'a') as log_file:
+            log_file.write(sep_double)
+            log_file.write(f'Result from plugin {plugin_name} at {datetime.datetime.now()}:\n')
+            log_file.write(sep_single)
+            if arguments.log_parameters:
+                log_file.writelines([f'{k}: {v}\n' for k, v in OrderedDict(sorted(vars(arguments).items())).items()])
+                log_file.write(sep_single)
+            log_file.writelines([f'{o}\n' for o in output])
+            log_file.write(sep_double)
+            log_file.write('\n')
 
     @staticmethod
     def process_techniques(applicable_to: list, arguments: Namespace, plugin: TechniqueBase) -> tuple:
@@ -129,6 +146,20 @@ class CommandLine:
                                                    local_stix_path=arguments.stix_location)
         warnings, results = dettect.update_data_sources(datasources, check_unused_data_sources=arguments.check_unused,
                                                         clean_unused_data_sources=arguments.clean_unused)
+        return dettect, results, warnings
+
+    @staticmethod
+    def process_groups(arguments: Namespace, plugin: GroupBase) -> tuple:
+        """
+        Process all groups from the source
+        """
+        # Get the group data
+        groups = plugin.get_attack_groups()
+        # Convert data to yaml
+        print('Generating groups YAML file.')
+        dettect = DettectGroupsAdministration(arguments.input_file, domain=arguments.domain,
+                                              local_stix_path=arguments.stix_location)
+        warnings, results = dettect.add_groups(groups)
         return dettect, results, warnings
 
     def start(self) -> None:
@@ -173,7 +204,7 @@ class CommandLine:
 
             # Evaluate command line arguments
             arguments = parser.parse_args()
-            applicable_to = [at.strip() for at in arguments.applicable_to.split(',')]
+            applicable_to = [at.strip() for at in arguments.applicable_to.split(',')] if arguments.applicable_to else []
             output_file = arguments.output_file or arguments.input_file
 
             # Read the data from the source
@@ -182,8 +213,10 @@ class CommandLine:
 
             if plugin_name.startswith('Technique'):
                 dettect, results, warnings = self.process_techniques(applicable_to, arguments, plugin)
-            else:
+            elif plugin_name.startswith('Datasource'):
                 dettect, results, warnings = self.process_datasource(applicable_to, arguments, plugin)
+            else:
+                dettect, results, warnings = self.process_groups(arguments, plugin)
 
             if arguments.name:
                 dettect.set_name(arguments.name)
@@ -191,7 +224,11 @@ class CommandLine:
             dettect.save_yaml_file(output_file)
             print(f'DeTT&CT YAML file written: {dettect.get_filename()}')
 
-            output = warnings + results
+            output = sorted(list(set(warnings + results)))
+
+            if arguments.log_file:
+                self._create_log_file(arguments, output, plugin_name)
+
             if len(output) > 0:
                 print('\nPlease review the following items:')
                 print(' - ' + '\n - '.join(output))

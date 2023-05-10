@@ -3,5 +3,5 @@
   "applicable_to": "Windows servers, Windows desktops",
   "check_unused": 1,
   "input_file": "../examples/techniques.yaml",
-  "file": "../examples/import.csv"
+  "file": "../examples/import_techniques.csv"
 }

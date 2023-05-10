@@ -108,6 +108,10 @@ class DettectBase(object):
             self._yaml_content = deepcopy(YAML_OBJ_NEW_TECHNIQUES_FILE)
             self.filename = f"techniques_{self._yaml_content['name']}.yaml"
             self._yaml_content['domain'] = self.domain
+        elif isinstance(self, DettectGroupsAdministration):
+            self._yaml_content = deepcopy(YAML_OBJ_NEW_GROUPS_FILE)
+            self.filename = f"groups_{self._yaml_content['name']}.yaml"
+            self._yaml_content['domain'] = self.domain
 
     def save_yaml_file(self, filename=None) -> None:
         """
@@ -226,6 +230,41 @@ class DettectBase(object):
                 return tech
         return None
 
+    def _load_attack_software(self) -> None:
+        """
+        Load the ATT&CK STIX data from the MITRE TAXII server.
+        :return: MITRE ATT&CK data object (STIX)
+        """
+        self._attack_software = self._convert_stix_software_to_dict(self.mitre.get_software(skip_revoked_deprecated=True))
+
+    def _get_software_from_attack(self, software_id: str) -> dict:
+        """
+        Return the technique object for the given technique_id.
+        """
+        for software in self._attack_software:
+            if software['software_id'] == software_id:
+                return software
+
+        return None
+
+    @staticmethod
+    def _convert_stix_software_to_dict(stix_attack_data: list) -> list:
+        """
+        Convert the STIX list with AttackPatterns to a dictionary for easier use in python and also include the technique_id and DeTT&CT data sources.
+        :param stix_attack_data: the MITRE ATT&CK STIX dataset with techniques
+        :return: list with dictionaries containing all software from the input stix_attack_data
+        """
+        attack_data = []
+        for stix_software in stix_attack_data:
+            software = json.loads(stix_software.serialize(), object_hook=DettectBase._date_hook)
+
+            # Add software_id as key, because it's hard to get from STIX:
+            software['software_id'] = DettectBase._get_attack_id(stix_software)
+
+            attack_data.append(software)
+
+        return attack_data
+
     @staticmethod
     def _convert_stix_techniques_to_dict(stix_attack_data: list) -> list:
         """
@@ -239,10 +278,6 @@ class DettectBase(object):
 
             # Add technique_id as key, because it's hard to get from STIX:
             tech['technique_id'] = DettectBase._get_attack_id(stix_tech)
-
-            # Create empty x_mitre_data_sources key for techniques without data sources:
-            if 'x_mitre_data_sources' not in tech.keys():
-                tech['x_mitre_data_sources'] = []
 
             attack_data.append(tech)
 
@@ -290,7 +325,21 @@ class DettectTechniquesAdministration(DettectBase):
         Updates the techniques YAML file with the given detections.
         :param  detection_rules: a dictionary of dictionaries containing detection name as key with the following data: applicable_to, location prefix and list with ATT&CK (sub) techniques
                 {
-                    {'Detection A': {'applicable_to': ['all'], 'location_prefix': 'SIEM', 'techniques': ['T1055']}}
+                    {'Detection A': {'applicable_to': ['all'],
+                                     'location_prefix': 'SIEM',
+                                     'techniques': ['T1055']
+                                    }
+                    }
+                }
+
+                Or a dictionary of dictionaries containing multiple applicable_to items in a list:
+
+                {
+                    {'Detection A': [{'applicable_to': ['all'],
+                                     'location_prefix': 'SIEM',
+                                     'techniques': ['T1055']
+                                     }]
+                    }
                 }
         :param  check_unused_detections: boolean. When True, all detections in YAML file will be checked against given detection_rules list. It's using
                                          the location field as list for detection rules including location_prefix as prefix: "Splunk: Detection A"
@@ -300,9 +349,15 @@ class DettectTechniquesAdministration(DettectBase):
         """
         date_today = datetime.utcnow().replace(hour=0, minute=0, second=0, microsecond=0)
 
+        # If detection_rules contains just one applicable to (as dictionary), convert the applicable_to data to a list to make it compatible:
+        for rule_name, rule_data_values in detection_rules.items():
+            if type(rule_data_values) == dict:
+                detection_rules[rule_name] = [rule_data_values]
+
         warnings, results = self._add_rules(detection_rules, date_today)
         w, r = self._delete_rules(detection_rules, check_unused_detections, clean_unused_detections,
                                   location_prefix_unused_detections, check_unused_applicable_to, clean_unused_applicable_to, date_today)
+        self._sort_locations()
         warnings += w
         results += r
 
@@ -315,88 +370,88 @@ class DettectTechniquesAdministration(DettectBase):
         warnings, results = [], []
 
         # Loop through all detection rules:
-        for rule_name, rule_data in detection_rules.items():
-            # Loop through every technique per rule:
-            for technique_id in rule_data['techniques']:
-                attack_technique = self._get_technique_from_attack(technique_id)
-                if attack_technique is None:
-                    warnings.append(
-                        f'Technique "{technique_id}" listed in detection rule "{rule_name}" does not exist in ATT&CK ({self.domain}). Skipping.')
-                    continue
+        for rule_name, rule_applicable_to in detection_rules.items():
+            # Look through all given applicable_to values:
+            for rule_data in rule_applicable_to:
 
-                location = rule_name if rule_data['location_prefix'] == '' else rule_data['location_prefix'] + ': ' + rule_name
-                yaml_technique = self._get_technique_from_yaml(technique_id)
-                if yaml_technique is not None:
-                    # Check is applicable_to is already there:
-                    applicable_to_list = [d['applicable_to'] for d in yaml_technique['detection']]
-                    if rule_data['applicable_to'] in applicable_to_list:
-                        # applicable_to already present, go to the right applicable_to:
-                        for d in yaml_technique['detection']:
-                            if d['applicable_to'] == rule_data['applicable_to']:
-                                # Check if detection rule is in location field:
-                                rule_exist = False
-                                for loc in d['location']:
-                                    if location in loc:
-                                        rule_exist = True
-                                        break
+                # Loop through every technique per rule:
+                for technique_id in rule_data['techniques']:
+                    attack_technique = self._get_technique_from_attack(technique_id)
+                    if attack_technique is None:
+                        warnings.append(
+                            f'Technique "{technique_id}" listed in detection rule "{rule_name}" does not exist in ATT&CK ({self.domain}). Skipping.')
+                        continue
 
-                                # If detection rule is not yet in location field, add detection rule to location field:
-                                if not rule_exist:
-                                    d['location'].append(location)
-
-                                    if len(d['score_logbook']) == 1 and d['score_logbook'][0]['date'] is None and d['score_logbook'][0]['score'] == -1:
-                                        d['score_logbook'] = []
-
-                                    # Check if score_logbook already has entry for today:
-                                    today_found = False
-                                    for logbook_entry in d['score_logbook']:
-                                        if logbook_entry['date'] == date_today:
-                                            logbook_entry['comment'] += f'. Detection rule added: {rule_name}'
-                                            today_found = True
+                    location = rule_name if rule_data['location_prefix'] == '' else rule_data['location_prefix'] + ': ' + rule_name
+                    yaml_technique = self._get_technique_from_yaml(technique_id)
+                    if yaml_technique is not None:
+                        # Check is applicable_to is already there:
+                        applicable_to_list = [d['applicable_to'] for d in yaml_technique['detection']]
+                        if rule_data['applicable_to'] in applicable_to_list:
+                            # applicable_to already present, go to the right applicable_to:
+                            for d in yaml_technique['detection']:
+                                if d['applicable_to'] == rule_data['applicable_to']:
+                                    # Check if detection rule is in location field:
+                                    rule_exist = False
+                                    for loc in d['location']:
+                                        if rule_name in loc:
+                                            rule_exist = True
                                             break
 
-                                    if not today_found:
-                                        score = self._get_latest_score(d)
-                                        score = 1 if score == -1 or score is None else score
-                                        d['score_logbook'].append({
-                                            'date': date_today,
-                                            'score': score,
-                                            'comment': f'Auto added by Dettectinator. TODO: Check score. Detection rule added: {rule_name}'
-                                        })
-                                        results.append(
-                                            f'Check score for technique {technique_id}. Detection rule(s) added for applicable_to {d["applicable_to"]}.')
+                                    # If detection rule is not yet in location field, add detection rule to location field:
+                                    if not rule_exist:
+                                        d['location'].append(location)
 
-                                break
+                                        # Check if score_logbook already has entry for today:
+                                        today_found = False
+                                        for logbook_entry in d['score_logbook']:
+                                            if logbook_entry['date'] == date_today:
+                                                logbook_entry['comment'] += f'. Detection rule added: {rule_name}'
+                                                results.append(
+                                                    f'Check score for technique {technique_id}. Detection rule(s) added for applicable_to {d["applicable_to"]}.')
+                                                today_found = True
+                                                break
+
+                                        if not today_found:
+                                            d['score_logbook'].append({
+                                                'date': date_today,
+                                                'score': self._get_latest_score(d),
+                                                'comment': f'Auto added by Dettectinator. TODO: Check score. Detection rule added: {rule_name}'
+                                            })
+                                            results.append(
+                                                f'Check score for technique {technique_id}. Detection rule(s) added for applicable_to {d["applicable_to"]}.')
+
+                                    break
+                        else:
+                            # applicable_to not present, add new detection object:
+                            new_detection = deepcopy(YAML_OBJ_DETECTION)
+                            new_detection['applicable_to'] = rule_data['applicable_to']
+                            new_detection['location'] = [location]
+                            new_detection['score_logbook'][0]['date'] = date_today
+                            new_detection['score_logbook'][0]['score'] = 1
+                            new_detection['score_logbook'][0][
+                                'comment'] = f'Auto added by Dettectinator. TODO: Check score. applicable_to with detection rule added: {rule_name}'
+                            yaml_technique['detection'].append(new_detection)
+                            results.append(f'Check score for technique {technique_id}. applicable_to is new: {str(rule_data["applicable_to"])}.')
                     else:
-                        # applicable_to not present, add new detection object:
+                        # Technique not present in YAML, add:
+                        new_technique = deepcopy(YAML_OBJ_TECHNIQUE)
+                        new_technique['technique_id'] = technique_id
+                        new_technique['technique_name'] = attack_technique['name']
+                        new_technique['detection'] = []
+                        new_technique['visibility'] = []
                         new_detection = deepcopy(YAML_OBJ_DETECTION)
                         new_detection['applicable_to'] = rule_data['applicable_to']
                         new_detection['location'] = [location]
                         new_detection['score_logbook'][0]['date'] = date_today
                         new_detection['score_logbook'][0]['score'] = 1
                         new_detection['score_logbook'][0][
-                            'comment'] = f'Auto added by Dettectinator. TODO: Check score. applicable_to with detection rule added: {rule_name}'
-                        yaml_technique['detection'].append(new_detection)
-                        results.append(f'Check score for technique {technique_id}. applicable_to is new: {str(rule_data["applicable_to"])}.')
-                else:
-                    # Technique not present in YAML, add:
-                    new_technique = deepcopy(YAML_OBJ_TECHNIQUE)
-                    new_technique['technique_id'] = technique_id
-                    new_technique['technique_name'] = attack_technique['name']
-                    new_technique['detection'] = []
-                    new_technique['visibility'] = []
-                    new_detection = deepcopy(YAML_OBJ_DETECTION)
-                    new_detection['applicable_to'] = rule_data['applicable_to']
-                    new_detection['location'] = [location]
-                    new_detection['score_logbook'][0]['date'] = date_today
-                    new_detection['score_logbook'][0]['score'] = 1
-                    new_detection['score_logbook'][0][
-                        'comment'] = f'Auto added by Dettectinator. TODO: Check score. Technique with detection rule added: {rule_name}'
-                    new_technique['detection'].append(new_detection)
-                    new_visibility = deepcopy(YAML_OBJ_VISIBILITY)
-                    new_technique['visibility'].append(new_visibility)
-                    self._yaml_content['techniques'].append(new_technique)
-                    results.append(f'Check score for technique {technique_id}. Technique is new.')
+                            'comment'] = f'Auto added by Dettectinator. TODO: Check score. Technique with detection rule added: {rule_name}'
+                        new_technique['detection'].append(new_detection)
+                        new_visibility = deepcopy(YAML_OBJ_VISIBILITY)
+                        new_technique['visibility'].append(new_visibility)
+                        self._yaml_content['techniques'].append(new_technique)
+                        results.append(f'Check score for technique {technique_id}. Technique is new.')
 
         return warnings, results
 
@@ -407,10 +462,12 @@ class DettectTechniquesAdministration(DettectBase):
         # First categorize all detection rules per applicable_to:
         warnings, results = [], []
         applicable_to_rules = {}
-        for rule_name, rule_data in detection_rules.items():
-            if str(rule_data['applicable_to']) not in applicable_to_rules.keys():
-                applicable_to_rules[str(rule_data['applicable_to'])] = {}  # cast key to string because a list cannot be a dictionary index name
-            applicable_to_rules[str(rule_data['applicable_to'])][rule_name] = rule_data
+        for rule_name, rule_applicable_to in detection_rules.items():
+            # Look through all given applicable_to values:
+            for rule_data in rule_applicable_to:
+                if str(rule_data['applicable_to']) not in applicable_to_rules.keys():
+                    applicable_to_rules[str(rule_data['applicable_to'])] = {}  # cast key to string because a list cannot be a dictionary index name
+                applicable_to_rules[str(rule_data['applicable_to'])][rule_name] = rule_data
 
         # Loop through all techniques in techniques YAML file:
         for yaml_technique in self._yaml_content['techniques']:
@@ -465,6 +522,14 @@ class DettectTechniquesAdministration(DettectBase):
                 yaml_technique['detection'].remove(item)
 
         return warnings, results
+
+    def _sort_locations(self):
+        """
+        Sorts the location field for every technique in the YAML content.
+        """
+        for technique in self._yaml_content['techniques']:
+            for applicable_to in technique['detection']:
+                applicable_to['location'] = sorted(applicable_to['location'])
 
     def _load_techniques(self) -> None:
         """
@@ -766,6 +831,67 @@ class DettectDataSourcesAdministration(DettectBase):
         self.data_components = {}
         for data_component in data_components:
             self.data_components[data_component['name'].lower()] = data_component['name']
+
+
+class DettectGroupsAdministration(DettectBase):
+    """
+    Create or modify a DeTT&CT techniques administration YAML file.
+    """
+
+    def __init__(self, filename: str = None, domain: str = None, local_stix_path: str = None) -> None:
+        super(DettectGroupsAdministration, self).__init__(filename, domain, local_stix_path)
+        self._load_attack_software()
+
+    def add_groups(self, groups: dict) -> tuple:
+        """
+        Adds the groups to the YAML file.
+        :param groups: a dictionary containing the group name as key with the following data: campaign, a list with ATT&CK (sub)
+                       techniques and a list with ATT&CK software
+                {'APT1': {'campaign': 'P0wn them all'
+                          'techniques': ['T1566.002','T1059.001', 'T1053.005'],
+                          'software': ['S0002']
+                         }
+                }
+        :return a list with results containing warnings or errors during the update process.
+        """
+        warnings, results = self._add_groups(groups)
+
+        return warnings, results
+
+    def _add_groups(self, groups: dict) -> tuple:
+        """
+        Adds new groups to the groups YAML file.
+        """
+        warnings, results = [], []
+
+        # Loop through all groups:
+        for group_name, group in groups.items():
+            techniques = []
+            software = []
+            for technique_id in group['techniques']:
+                attack_technique = self._get_technique_from_attack(technique_id)
+                if attack_technique is None:
+                    warnings.append(
+                        f'Technique "{technique_id}" listed in group "{group_name}" does not exist in ATT&CK ({self.domain}). Skipping.')
+                else:
+                    techniques.append(technique_id)
+
+            for software_id in group['software']:
+                attack_software = self._get_software_from_attack(software_id)
+                if attack_software is None:
+                    warnings.append(
+                        f'Software "{software_id}" listed in group "{group_name}" does not exist in ATT&CK ({self.domain}). Skipping.')
+                else:
+                    software.append(software_id)
+
+            new_group = deepcopy(YAML_OBJ_GROUP)
+            new_group['group_name'] = group_name
+            new_group['campaign'] = group['campaign']
+            new_group['technique_id'] = techniques
+            new_group['software_id'] = software
+            self._yaml_content['groups'].append(new_group)
+
+        return warnings, results
 
 
 if __name__ == '__main__':

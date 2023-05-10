@@ -28,6 +28,10 @@ For data sources, you can use the following plugins:
 - CSV: any csv with ATT&CK data sources and products (file)
 - Excel: any Excel file with ATT&CK data sources and products (file)
 
-It's easy to create your own Dettectinator plugins or edit the ones we've provided to cover additional scenarios.
+In the latest version we have also added support for importing attack groups data. The way that you import that data will depend on how you get your CTI data delivered. We added 2 sample plugins that you can use to create your own tailored plugins:
+- Excel: import techniques for groups from Excel. In this Excel (which can be found in the examples) each group has its own tab that lists the techniques.
+- PDF: import techniques and software based on regular expressions from a PDF file.
+
+It's easy to create your own Dettectinator plugins or edit the ones we've provided to cover additional scenario's.
 
 More information on how to use Dettectinator and how to use and create plugins can be found in the [wiki](https://github.com/siriussecurity/dettectinator/wiki).

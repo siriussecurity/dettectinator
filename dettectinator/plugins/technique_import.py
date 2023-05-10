@@ -59,7 +59,7 @@ class TechniqueBase:
         """
         Retrieves use-case/technique data from a data source
         :param default_applicable_to: Default value for systems that the detections are applicable to (can be overrule from source)
-        :return: Dictionary, example: {'Detection A': {'applicable_to': ['all'], 'location_prefix': 'SIEM', 'techniques': ['T1055']}}
+        :return: Dictionary, example: {'Detection A': [{'applicable_to': ['all'], 'location_prefix': 'SIEM', 'techniques': ['T1055']}]}
         """
 
         use_cases = {}
@@ -76,11 +76,22 @@ class TechniqueBase:
             applicable_to = applicable_to or default_applicable_to
 
             if use_case in use_cases.keys():
-                use_cases[use_case]['techniques'].append(technique)
+                updated = False
+
+                for item in use_cases[use_case]:
+                    if sorted(applicable_to) == sorted(item['applicable_to']):
+                        item['techniques'].append(technique)
+                        updated = True
+                        break
+
+                if not updated:
+                    use_cases[use_case].append({'applicable_to': applicable_to,
+                                                'location_prefix': self._location_prefix,
+                                                'techniques': [technique]})
             else:
-                use_cases[use_case] = {'applicable_to': applicable_to,
-                                       'location_prefix': self._location_prefix,
-                                       'techniques': [technique]}
+                use_cases[use_case] = [{'applicable_to': applicable_to,
+                                        'location_prefix': self._location_prefix,
+                                        'techniques': [technique]}]
 
         return use_cases
 
@@ -303,11 +314,11 @@ class TechniqueDefenderIdentityRules(TechniqueBase):
     def __init__(self, parameters: dict) -> None:
         super().__init__(parameters)
 
-        self.ATP_DOCS = ['https://raw.githubusercontent.com/MicrosoftDocs/ATADocs/master/ATPDocs/compromised-credentials-alerts.md',
-                         'https://raw.githubusercontent.com/MicrosoftDocs/ATADocs/master/ATPDocs/domain-dominance-alerts.md',
-                         'https://raw.githubusercontent.com/MicrosoftDocs/ATADocs/master/ATPDocs/exfiltration-alerts.md',
+        self.ATP_DOCS = ['https://github.com/MicrosoftDocs/ATADocs/blob/master/ATPDocs/credential-access-alerts.md',
                          'https://raw.githubusercontent.com/MicrosoftDocs/ATADocs/master/ATPDocs/lateral-movement-alerts.md',
-                         'https://raw.githubusercontent.com/MicrosoftDocs/ATADocs/master/ATPDocs/reconnaissance-alerts.md']
+                         'https://raw.githubusercontent.com/MicrosoftDocs/ATADocs/master/ATPDocs/reconnaissance-discovery-alerts.md',
+                         'https://raw.githubusercontent.com/MicrosoftDocs/ATADocs/master/ATPDocs/persistence-privilege-escalation-alerts.md',
+                         'https://raw.githubusercontent.com/MicrosoftDocs/ATADocs/master/ATPDocs/other-alerts.md']
 
     @staticmethod
     def set_plugin_params(parser: ArgumentParser) -> None:
@@ -324,39 +335,42 @@ class TechniqueDefenderIdentityRules(TechniqueBase):
         """
         for source_url in self.ATP_DOCS:
             resp = requests.get(source_url)
-            body = resp.text
+            if resp.status_code == 200:
+                body = resp.text
 
-            # Remove comments from file, because it may contain commented detection rules.
-            while '<!--' in body:
-                body = body[0:body.find('<!--')] + body[body.find('-->')+3:]
+                # Remove comments from file, because it may contain commented detection rules.
+                while '<!--' in body:
+                    body = body[0:body.find('<!--')] + body[body.find('-->')+3:]
 
-            regex_title = re.compile('##\s(.*\s\(external\sID\s\d{4}\))')
-            regex_tech = re.compile('\((T\d{4})\)')
-            regex_subtech = re.compile('(T\d{4}\.\d{3})')
+                regex_title = re.compile('##\s(.*\s\(external\sID\s\d{4}\))')
+                regex_tech = re.compile('\((T\d{4})\)')
+                regex_subtech = re.compile('(T\d{4}\.\d{3})')
 
-            current_detection = None
-            for line in body.splitlines():
-                title_match = regex_title.match(line)
-                if title_match or current_detection is None:
-                    if title_match:
-                        current_detection = title_match.group(1)
-                        continue
-                else:
-                    if 'MITRE attack technique' in line and 'N/A' in line:
-                        current_detection = None
-                    elif 'MITRE attack technique' in line:
-                        tech_match = regex_tech.findall(line)
-                        if tech_match:
-                            for t in tech_match:
-                                yield t, current_detection, None
-                    elif 'MITRE attack sub-technique' in line and 'N/A' in line:
-                        current_detection = None
-                    elif 'MITRE attack sub-technique' in line:
-                        subtech_match = regex_subtech.findall(line)
-                        if subtech_match:
-                            for t in subtech_match:
-                                yield t, current_detection, None
+                current_detection = None
+                for line in body.splitlines():
+                    title_match = regex_title.match(line)
+                    if title_match or current_detection is None:
+                        if title_match:
+                            current_detection = title_match.group(1)
+                            continue
+                    else:
+                        if 'MITRE attack technique' in line and 'N/A' in line:
                             current_detection = None
+                        elif 'MITRE attack technique' in line:
+                            tech_match = regex_tech.findall(line)
+                            if tech_match:
+                                for t in tech_match:
+                                    yield t, current_detection, None
+                        elif 'MITRE attack sub-technique' in line and 'N/A' in line:
+                            current_detection = None
+                        elif 'MITRE attack sub-technique' in line:
+                            subtech_match = regex_subtech.findall(line)
+                            if subtech_match:
+                                for t in subtech_match:
+                                    yield t, current_detection, None
+                                current_detection = None
+            else:
+                print(f'Received HTTP status code "{resp.status_code}" on URL "{source_url}".')
 
 
 class TechniqueDefenderAlerts(TechniqueAzureAuthBase):

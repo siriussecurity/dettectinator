@@ -40,6 +40,21 @@ class TestDettectTechniquesAdministration(unittest.TestCase):
         self.assertEqual('Test: Detection A', self.dettect._yaml_content['techniques'][0]['detection'][0]['location'][0], msg='Expecting specific location value')
         self.assertEqual('enterprise-attack', self.dettect._yaml_content['domain'], msg='Expecting specific domain value')
 
+    def test_update_detections_new_file_basic_applicable_to_list(self):
+        self.dettect.start_clean_file()
+        rules = {}
+        rules['Detection A'] = [{'applicable_to': ['all'], 'location_prefix': 'Test', 'techniques': ['T1055']},
+                                {'applicable_to': ['windows'], 'location_prefix': 'Test', 'techniques': ['T1055']}]
+        warnings, results = self.dettect.update_detections(rules)
+
+        self.assertIs(0, len(warnings), msg='No warnings expected')
+        self.assertEqual('T1055', self.dettect._yaml_content['techniques'][0]['technique_id'], msg='Expecting specific technique_id value')
+        self.assertEqual('all', self.dettect._yaml_content['techniques'][0]['detection'][0]['applicable_to'][0], msg='Expecting specific applicable_to value')
+        self.assertEqual('windows', self.dettect._yaml_content['techniques'][0]['detection'][1]['applicable_to'][0], msg='Expecting specific applicable_to value')
+        self.assertEqual('Test: Detection A', self.dettect._yaml_content['techniques'][0]['detection'][0]['location'][0], msg='Expecting specific location value')
+        self.assertEqual('Test: Detection A', self.dettect._yaml_content['techniques'][0]['detection'][1]['location'][0], msg='Expecting specific location value')
+        self.assertEqual('enterprise-attack', self.dettect._yaml_content['domain'], msg='Expecting specific domain value')
+
     def test_update_detections_new_file_basic_mobile(self):
         self.dettect_mobile.start_clean_file()
         rules = {}
@@ -101,7 +116,7 @@ class TestDettectTechniquesAdministration(unittest.TestCase):
     def test_update_detections_check_unused_detections(self):
         self.dettect.start_clean_file()
         rules1 = {}
-        rules1['Detection A'] = {'applicable_to': ['all'], 'location_prefix': 'Test', 'techniques': ['T1055']}
+        rules1['Detection A'] = [{'applicable_to': ['all'], 'location_prefix': 'Test', 'techniques': ['T1055']}]
         warnings1, results1 = self.dettect.update_detections(rules1)
         rules2 = {}
         rules2['Detection B'] = {'applicable_to': ['all'], 'location_prefix': 'Test', 'techniques': ['T1202']}
@@ -113,7 +128,7 @@ class TestDettectTechniquesAdministration(unittest.TestCase):
     def test_update_detections_clean_unused_detections(self):
         self.dettect.start_clean_file()
         rules1 = {}
-        rules1['Detection A'] = {'applicable_to': ['all'], 'location_prefix': 'Test', 'techniques': ['T1055']}
+        rules1['Detection A'] = [{'applicable_to': ['all'], 'location_prefix': 'Test', 'techniques': ['T1055']}]
         warnings1, results1 = self.dettect.update_detections(rules1)
         rules2 = {}
         rules2['Detection B'] = {'applicable_to': ['all'], 'location_prefix': 'Test', 'techniques': ['T1202']}
