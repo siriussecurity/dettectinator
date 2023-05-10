@@ -13,7 +13,7 @@ See the [documentation](https://github.com/siriussecurity/dettectinator) for mor
 
 setuptools.setup(
     name="dettectinator",
-    version="1.1.1",
+    version="1.2.0",
     author="Sirius Security",
     description="Dettectinator - The Python library to your DeTT&CT YAML files.",
     long_description=long_description,
@@ -27,7 +27,8 @@ setuptools.setup(
     keywords="mitre attack dettect soc threat hunting",
     packages=setuptools.find_packages(exclude=["examples", "tests"]),
     install_requires=["requests", "ruamel.yaml", "attackcti", "python-dateutil", "msal", "stix2",
-                      "openpyxl", "suricataparser", "addonfactory-splunk-conf-parser-lib", "pandas", "anyascii"],
+                      "openpyxl", "suricataparser", "addonfactory-splunk-conf-parser-lib", "pandas",
+                      "anyascii", "pypdf"],
     license='GPL3',
     classifiers=[
         'Development Status :: 5 - Production/Stable',
