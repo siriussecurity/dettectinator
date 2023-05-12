@@ -154,11 +154,15 @@ class CommandLine:
         """
         # Get the group data
         groups = plugin.get_attack_groups()
+        # Get the notes
+        notes = plugin.get_notes()
         # Convert data to yaml
         print('Generating groups YAML file.')
         dettect = DettectGroupsAdministration(arguments.input_file, domain=arguments.domain,
                                               local_stix_path=arguments.stix_location)
         warnings, results = dettect.add_groups(groups)
+        if notes:
+            dettect.add_notes(notes)
         return dettect, results, warnings
 
     def start(self) -> None:

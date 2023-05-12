@@ -862,6 +862,13 @@ class DettectGroupsAdministration(DettectBase):
 
         return warnings, results
 
+    def add_notes(self, notes: str) -> None:
+        """
+        Adds notes to the YAML file
+        :param notes: Notes to add to the YAML file
+        """
+        self._yaml_content['notes'] = notes
+
     def _add_groups(self, groups: dict) -> tuple:
         """
         Adds new groups to the groups YAML file.

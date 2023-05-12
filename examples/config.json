@@ -1,7 +1,5 @@
 {
-  "plugin":  "TechniqueCsv",
-  "applicable_to": "Windows servers, Windows desktops",
-  "check_unused": 1,
-  "input_file": "../examples/techniques.yaml",
-  "file": "../examples/import_techniques.csv"
+  "plugin":  "GroupWeb",
+  "url": "https://news.sophos.com/en-us/2023/05/09/akira-ransomware-is-bringin-88-back/",
+  "group": "Akira"
 }
