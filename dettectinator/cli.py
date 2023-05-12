@@ -83,7 +83,8 @@ class CommandLine:
         parser.add_argument('-lf', '--log_file', help='Log to write results and warnings to.', default=None)
         parser.add_argument('-lp', '--log_parameters', action='store_true', help='Add the configuration parameters to the log.')
         parser.add_argument('-ch', '--check_unused', action='store_true', help='Check unused detections.')
-        parser.add_argument('-cl', '--clean_unused', action='store_true', help='Clean unused detections.')
+        parser.add_argument('-cl', '--clean_unused', action='store_true',
+                            help='Clean unused detections. When using this option, including the check_unused option is necessary.')
 
     def _get_argument_values_from_config_file(self) -> dict:
         """
@@ -188,7 +189,7 @@ class CommandLine:
             else:
                 print(f'data import plugin "{plugin_name}" does not exist. Valid plugins:')
                 self._print_plugins(plugins)
-                sys.exit()
+                sys.exit(1)
 
             # Add the default command line params
             parser = ArgumentParser(add_help=True, conflict_handler='error', )

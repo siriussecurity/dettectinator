@@ -279,10 +279,6 @@ class DettectBase(object):
             # Add technique_id as key, because it's hard to get from STIX:
             tech['technique_id'] = DettectBase._get_attack_id(stix_tech)
 
-            # Create empty x_mitre_data_sources key for techniques without data sources:
-            if 'x_mitre_data_sources' not in tech.keys():
-                tech['x_mitre_data_sources'] = []
-
             attack_data.append(tech)
 
         return attack_data
@@ -495,7 +491,7 @@ class DettectTechniquesAdministration(DettectBase):
                                 warnings.append('Rule from YAML not found in rules list: ' + loc)
                             elif check_unused_detections and clean_unused_detections:
                                 detection['location'].remove(loc)
-                                score = 0 if len(detection['location']) == 0 else self._get_latest_score(detection)
+                                score = -1 if len(detection['location']) == 0 else self._get_latest_score(detection)
 
                                 # Check if score_logbook already has entry for today:
                                 today_found = False
@@ -543,24 +539,24 @@ class DettectTechniquesAdministration(DettectBase):
 
         for d in self._yaml_content['techniques']:
             if 'detection' in d:
+                # There is just one detection entry, make it a list:
+                if isinstance(d['detection'], dict):
+                    d['detection'] = [d['detection']]
+
                 # Add detection items:
-                if isinstance(d['detection'], dict):  # There is just one detection entry
-                    d['detection'] = self._set_yaml_dv_comments(d['detection'])
-                    self._add_entry_to_list_in_dictionary(my_techniques, d['technique_id'], 'detection', d['detection'])
-                elif isinstance(d['detection'], list):  # There are multiple detection entries
-                    for de in d['detection']:
-                        de = self._set_yaml_dv_comments(de)
-                        self._add_entry_to_list_in_dictionary(my_techniques, d['technique_id'], 'detection', de)
+                for de in d['detection']:
+                    de = self._set_yaml_dv_comments(de)
+                    self._add_entry_to_list_in_dictionary(my_techniques, d['technique_id'], 'detection', de)
 
             if 'visibility' in d:
+                # There is just one detection entry, make it a list:
+                if isinstance(d['visibility'], dict):
+                    d['visibility'] = [d['visibility']]
+
                 # Add visibility items
-                if isinstance(d['visibility'], dict):  # There is just one visibility entry
-                    d['visibility'] = self._set_yaml_dv_comments(d['visibility'])
-                    self._add_entry_to_list_in_dictionary(my_techniques, d['technique_id'], 'visibility', d['visibility'])
-                elif isinstance(d['visibility'], list):  # There are multiple visibility entries
-                    for de in d['visibility']:
-                        de = self._set_yaml_dv_comments(de)
-                        self._add_entry_to_list_in_dictionary(my_techniques, d['technique_id'], 'visibility', de)
+                for de in d['visibility']:
+                    de = self._set_yaml_dv_comments(de)
+                    self._add_entry_to_list_in_dictionary(my_techniques, d['technique_id'], 'visibility', de)
 
         self.techniques = my_techniques
 

@@ -256,7 +256,7 @@ class DatasourceWindowsSysmon(DatasourceOssemBase):
             # If this is an event type with an onmatch == include attribute without child items this means
             # that nothing is being logged for this event type
             for config_item in config_items:
-                if config_item.attrib['onmatch'] == "include" and len(config_item.getchildren()) == 0:
+                if config_item.attrib['onmatch'] == "include" and len(list(config_item)) == 0:
                     continue
 
             data_source = str(record['Component']).title()
