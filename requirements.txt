@@ -1,4 +1,4 @@
-requests==2.28.1
+requests==2.31.0
 ruamel.yaml==0.17.21
 attackcti==0.3.7
 python-dateutil==2.8.2
@@ -9,4 +9,4 @@ suricataparser==1.0.0
 addonfactory-splunk-conf-parser-lib==0.3.4
 pandas==1.5.2
 anyascii==0.3.1
-pypdf==3.8.1
+pypdf==3.9.0
