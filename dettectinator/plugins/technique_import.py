@@ -370,7 +370,7 @@ class TechniqueDefenderIdentityRules(TechniqueBase):
                                     yield t, current_detection, None
                                 current_detection = None
             else:
-                print(f'Received HTTP status code "{resp.status_code}" on URL "{source_url}".')
+                raise Exception(f'TechniqueDefenderIdentityRules: Received HTTP status code "{resp.status_code}" on URL "{source_url}".')
 
 
 class TechniqueDefenderAlerts(TechniqueAzureAuthBase):
