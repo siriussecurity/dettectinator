@@ -479,7 +479,7 @@ class DettectTechniquesAdministration(DettectBase):
                     # Make a copy to loop through while editting the original location field:
                     locations = deepcopy(detection['location'])
                     for loc in locations:
-                        if loc.startswith(location_prefix_unused_detections) and loc not in rules_for_app_to:
+                        if loc.startswith(f'{location_prefix_unused_detections}: ') and loc not in rules_for_app_to:
                             if check_unused_detections and not clean_unused_detections:
                                 warnings.append('Rule from YAML not found in rules list: ' + loc)
                             elif check_unused_detections and clean_unused_detections:
