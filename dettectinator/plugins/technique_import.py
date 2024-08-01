@@ -370,7 +370,7 @@ class TechniqueDefenderIdentityRules(TechniqueBase):
                                     yield t, current_detection, None
                                 current_detection = None
             else:
-                print(f'Received HTTP status code "{resp.status_code}" on URL "{source_url}".')
+                raise Exception(f'TechniqueDefenderIdentityRules: Received HTTP status code "{resp.status_code}" on URL "{source_url}".')
 
 
 class TechniqueDefenderAlerts(TechniqueAzureAuthBase):
@@ -392,7 +392,7 @@ class TechniqueDefenderAlerts(TechniqueAzureAuthBase):
 
         for record in defender_data:
             technique = record['TechniqueId']
-            use_case = record['Title'].strip()
+            use_case = record['Title'].strip().replace("'", "''").replace("’", "")
             yield technique, use_case, None
 
     @staticmethod
