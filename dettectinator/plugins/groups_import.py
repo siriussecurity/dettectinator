@@ -6,9 +6,11 @@ Authors:
 License: GPL-3.0 License
 """
 
+from datetime import datetime
 from argparse import ArgumentParser
 from collections.abc import Iterable
 import urllib3
+import requests
 import re
 from pypdf import PdfReader
 
@@ -56,6 +58,12 @@ class GroupBase:
 
         return groups
 
+    def get_notes(self) -> str:
+        """
+        Return a value for the "notes" field in the YAML
+        """
+        raise NotImplementedError()
+
     def get_data_from_source(self) -> Iterable:
         """
         Retrieves group/technique/software data from the source
@@ -66,6 +74,10 @@ class GroupBase:
     @staticmethod
     def _create_unique_sorted_list(items: list) -> list:
         return sorted(list(set(items)))
+
+    @staticmethod
+    def _default_note_template(source: str) -> str:
+        return f'Generated on {datetime.now()} based on: {source}'
 
 
 class GroupExcel(GroupBase):
@@ -88,6 +100,12 @@ class GroupExcel(GroupBase):
         GroupBase.set_plugin_params(parser)
 
         parser.add_argument('--file', help='Path of the Excel file to import', required=True)
+
+    def get_notes(self) -> str:
+        """
+        Return a value for the "notes" field in the YAML
+        """
+        return self._default_note_template(self._parameters["file"])
 
     def get_data_from_source(self) -> Iterable:
         """
@@ -132,7 +150,13 @@ class GroupPdf(GroupBase):
         """
         GroupBase.set_plugin_params(parser)
 
-        parser.add_argument('--file', help='Path of the Excel file to import', required=True)
+        parser.add_argument('--file', help='Path of the Pdf file to import', required=True)
+
+    def get_notes(self) -> str:
+        """
+        Return a value for the "notes" field in the YAML
+        """
+        return self._default_note_template(self._parameters["file"])
 
     def get_data_from_source(self) -> Iterable:
         """
@@ -157,3 +181,55 @@ class GroupPdf(GroupBase):
         software = self._create_unique_sorted_list(re.findall(pattern, text))
 
         yield None, None, techniques, software
+
+
+class GroupWeb(GroupBase):
+    """
+    Sample plugin to import data from a web page. It uses a regular expression to fetch techniques and software
+    """
+
+    def __init__(self, parameters: dict) -> None:
+        super().__init__(parameters)
+        if 'url' not in self._parameters:
+            raise Exception('GroupWeb: "url" parameter is required.')
+
+    @staticmethod
+    def set_plugin_params(parser: ArgumentParser) -> None:
+        """
+        Set command line arguments specific for the plugin
+        :param parser: Argument parser
+        """
+        GroupBase.set_plugin_params(parser)
+
+        parser.add_argument('--url', help='Url of the web page to import', required=True)
+
+    def get_notes(self) -> str:
+        """
+        Return a value for the "notes" field in the YAML
+        """
+        return self._default_note_template(self._parameters["url"])
+
+    def get_data_from_source(self) -> Iterable:
+        """
+        Retrieves group/technique/software data from the source
+        :return: Iterable, yields group, campaign, techniques, software
+        """
+        url = self._parameters['url']
+        print(f'Reading data from "{url}"')
+
+        response = requests.get(url, timeout=5)
+
+        if response.status_code == 200:
+            text = response.text
+
+            # Get ATT&CK Technique ID's from the text
+            pattern = r'T[0-9]{4}\.[0-9]{3}|T[0-9]{4}'
+            techniques = self._create_unique_sorted_list(re.findall(pattern, text))
+
+            # Get ATT&CK Software ID's from the text
+            pattern = r'S[0-9]{4}'
+            software = self._create_unique_sorted_list(re.findall(pattern, text))
+
+            yield None, None, techniques, software
+        else:
+            print(f'Request to url "{url}" failed.')

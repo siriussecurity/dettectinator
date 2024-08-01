@@ -273,6 +273,10 @@ class TechniqueSentinelAlertRules(TechniqueAzureAuthBase):
                 for technique in properties['techniques']:
                     use_case = properties['displayName']
                     yield technique, use_case, None
+            if 'subTechniques' in properties and properties['subTechniques']:
+                for technique in properties['subTechniques']:
+                    use_case = properties['displayName']
+                    yield technique, use_case, None
 
     def _get_sentinel_data(self, access_token: str) -> list:
         """
@@ -282,7 +286,7 @@ class TechniqueSentinelAlertRules(TechniqueAzureAuthBase):
         """
         url = f'https://management.azure.com/subscriptions/{self._subscription_id}/resourceGroups/{self._resource_group}/' + \
               f'providers/Microsoft.OperationalInsights/workspaces/{self._workspace}/providers/Microsoft.SecurityInsights/' + \
-              'alertRules?api-version=2022-07-01-preview'
+              'alertRules?api-version=2024-01-01-preview'
 
         headers = {
             'Content-Type': 'application/json',

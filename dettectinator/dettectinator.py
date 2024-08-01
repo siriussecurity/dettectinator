@@ -391,15 +391,8 @@ class DettectTechniquesAdministration(DettectBase):
                             # applicable_to already present, go to the right applicable_to:
                             for d in yaml_technique['detection']:
                                 if d['applicable_to'] == rule_data['applicable_to']:
-                                    # Check if detection rule is in location field:
-                                    rule_exist = False
-                                    for loc in d['location']:
-                                        if rule_name in loc:
-                                            rule_exist = True
-                                            break
-
                                     # If detection rule is not yet in location field, add detection rule to location field:
-                                    if not rule_exist:
+                                    if not location in d['location']:
                                         d['location'].append(location)
 
                                         # Check if score_logbook already has entry for today:
@@ -486,7 +479,7 @@ class DettectTechniquesAdministration(DettectBase):
                     # Make a copy to loop through while editting the original location field:
                     locations = deepcopy(detection['location'])
                     for loc in locations:
-                        if loc.startswith(location_prefix_unused_detections) and loc not in rules_for_app_to:
+                        if loc.startswith(f'{location_prefix_unused_detections}: ') and loc not in rules_for_app_to:
                             if check_unused_detections and not clean_unused_detections:
                                 warnings.append('Rule from YAML not found in rules list: ' + loc)
                             elif check_unused_detections and clean_unused_detections:
@@ -857,6 +850,13 @@ class DettectGroupsAdministration(DettectBase):
         warnings, results = self._add_groups(groups)
 
         return warnings, results
+
+    def add_notes(self, notes: str) -> None:
+        """
+        Adds notes to the YAML file
+        :param notes: Notes to add to the YAML file
+        """
+        self._yaml_content['notes'] = notes
 
     def _add_groups(self, groups: dict) -> tuple:
         """
