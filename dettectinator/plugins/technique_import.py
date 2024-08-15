@@ -396,7 +396,7 @@ class TechniqueDefenderAlerts(TechniqueAzureAuthBase):
 
         for record in defender_data:
             technique = record['TechniqueId']
-            use_case = record['Title'].strip().replace("'", "''").replace("’", "")
+            use_case = record['Title'].strip().strip('\u200b').replace("'", "''").replace("’", "")
             yield technique, use_case, None
 
     @staticmethod
