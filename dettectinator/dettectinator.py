@@ -391,8 +391,9 @@ class DettectTechniquesAdministration(DettectBase):
                             # applicable_to already present, go to the right applicable_to:
                             for d in yaml_technique['detection']:
                                 if d['applicable_to'] == rule_data['applicable_to']:
-                                    # If detection rule is not yet in location field, add detection rule to location field:
-                                    if not location in d['location']:
+                                    # If detection rule is not yet in location field (case insensitive search), add detection rule to location field:
+                                    locations = list(map(str.lower,d['location']))
+                                    if not location.lower() in locations:
                                         d['location'].append(location)
 
                                         # Check if score_logbook already has entry for today:
@@ -413,6 +414,17 @@ class DettectTechniquesAdministration(DettectBase):
                                             })
                                             results.append(
                                                 f'Check score for technique {technique_id}. Detection rule(s) added for applicable_to {d["applicable_to"]}.')
+                                    elif not location in d['location']:
+                                        # The "if check" was lowercase, so this "else" clause will check if the literal (case sensitive) location is not in the list.
+                                        # Which means that the casing of an existing location has changed.
+                                        to_remove = None
+                                        for loc in d['location']:
+                                            if location.lower() == loc.lower():
+                                                to_remove = loc
+                                                break
+                                        if to_remove:
+                                            d['location'].remove(to_remove)
+                                            d['location'].append(location)
 
                                     break
                         else:
