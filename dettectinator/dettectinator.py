@@ -392,8 +392,10 @@ class DettectTechniquesAdministration(DettectBase):
                             for d in yaml_technique['detection']:
                                 if d['applicable_to'] == rule_data['applicable_to']:
                                     # If detection rule is not yet in location field, add detection rule to location field:
-                                    if not location in d['location']:
-                                        d['location'].append(location)
+                                    for loc in d['location']:
+                                        if rule_name in loc:
+                                            rule_exist = True
+                                            break
 
                                         # Check if score_logbook already has entry for today:
                                         today_found = False
