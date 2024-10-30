@@ -14,6 +14,7 @@ import sys
 import re
 import requests
 import urllib3
+from anyascii import anyascii
 
 try:
     # When dettectinator is installed as python library
@@ -65,6 +66,9 @@ class TechniqueBase:
         use_cases = {}
 
         for technique, use_case, applicable_to in self.get_data_from_source():
+            # Take ASCII representation of unicode characters to make it compatible with the YAML file which is in ASCII.
+            use_case = anyascii(use_case)
+            
             # Exclude all detections that match the exclude-pattern
             if self._re_exclude and not re.match(self._re_exclude, use_case) is None:
                 continue
@@ -396,7 +400,7 @@ class TechniqueDefenderAlerts(TechniqueAzureAuthBase):
 
         for record in defender_data:
             technique = record['TechniqueId']
-            use_case = record['Title'].strip().replace("'", "''").replace("’", "")
+            use_case = record['Title'].strip().strip('\u200b').replace("'", "''").replace("’", "")
             yield technique, use_case, None
 
     @staticmethod
