@@ -120,7 +120,7 @@ class TestDettectTechniquesAdministration(unittest.TestCase):
         warnings1, results1 = self.dettect.update_detections(rules1)
         rules2 = {}
         rules2['Detection B'] = {'applicable_to': ['all'], 'location_prefix': 'Test', 'techniques': ['T1202']}
-        warnings2, results2 = self.dettect.update_detections(rules2, check_unused_detections=True, clean_unused_detections=False)
+        warnings2, results2 = self.dettect.update_detections(rules2, check_unused_detections=True, clean_unused_detections=False, location_prefix_unused_detections='Test')
 
         self.assertIs(1, len(warnings2), msg='1 warnings expected')
         self.assertIs(1, len(self.dettect._yaml_content['techniques'][0]['detection'][0]['location']), msg='Expecting location field having 1 entry')
@@ -132,7 +132,7 @@ class TestDettectTechniquesAdministration(unittest.TestCase):
         warnings1, results1 = self.dettect.update_detections(rules1)
         rules2 = {}
         rules2['Detection B'] = {'applicable_to': ['all'], 'location_prefix': 'Test', 'techniques': ['T1202']}
-        warnings2, results2 = self.dettect.update_detections(rules2, check_unused_detections=True, clean_unused_detections=True)
+        warnings2, results2 = self.dettect.update_detections(rules2, check_unused_detections=True, clean_unused_detections=True, location_prefix_unused_detections='Test')
 
         self.assertIs(0, len(warnings2), msg='No warnings expected')
         self.assertIs(0, len(self.dettect._yaml_content['techniques'][0]['detection'][0]['location']), msg='Location field expected empty')
