@@ -350,9 +350,9 @@ class TechniqueDefenderIdentityRules(TechniqueBase):
                 while '<!--' in body:
                     body = body[0:body.find('<!--')] + body[body.find('-->')+3:]
 
-                regex_title = re.compile('##\s(.*\s\(external\sID\s\d{4}\))')
-                regex_tech = re.compile('\((T\d{4})\)')
-                regex_subtech = re.compile('(T\d{4}\.\d{3})')
+                regex_title = re.compile(r'##\s(.*\s\(external\sID\s\d{4}\))')
+                regex_tech = re.compile(r'\((T\d{4})\)')
+                regex_subtech = re.compile(r'(T\d{4}\.\d{3})')
 
                 current_detection = None
                 for line in body.splitlines():
@@ -410,7 +410,7 @@ class TechniqueDefenderAlerts(TechniqueAzureAuthBase):
         :param access_token: JWT token to execute the request on the backend
         :return: Dictionary containing the results
         """
-        query = '''
+        query = r'''
         AlertInfo
         | mv-expand todynamic(AttackTechniques)
         | extend TechniqueId = extract(@'\((T.*)\)', 1, tostring(AttackTechniques))
