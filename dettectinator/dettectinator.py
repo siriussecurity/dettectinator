@@ -19,7 +19,6 @@ from datetime import datetime
 from copy import deepcopy
 from logging import getLogger, ERROR as LOGERROR
 from ruamel.yaml import YAML
-from attack_taxii_client import attack_client
 from requests import exceptions
 from stix2 import datastore, Filter
 from anyascii import anyascii
@@ -31,10 +30,12 @@ getLogger('taxii2client').setLevel(LOGERROR)
 try:
     # When dettectinator is installed as python library
     from dettectinator.constants import *
+    from dettectinator.attack_taxii_client import attack_client
 except ModuleNotFoundError:
     # When dettectinator is not installed as python library
     sys.path.append(os.path.dirname(os.path.abspath(__file__)))
     from constants import *
+    from attack_taxii_client import attack_client
 
 
 class DettectBase(object):
