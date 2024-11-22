@@ -826,13 +826,13 @@ class DettectDataSourcesAdministration(DettectBase):
         :return: list of data component STIX objects
         """
         if self.domain == 'enterprise-attack':
-            data_components = self.mitre.TC_ENTERPRISE_SOURCE.query(Filter("type", "=", "x-mitre-data-component"))
+            data_components = self.mitre.enterprise_source.query(Filter("type", "=", "x-mitre-data-component"))
         elif self.domain == 'ics-attack':
             # ICS data components are not yet in CTI, so this will not work
-            data_components = self.mitre.TC_ICS_SOURCE.query(Filter("type", "=", "x-mitre-data-component"))
+            data_components = self.mitre.ics_source.query(Filter("type", "=", "x-mitre-data-component"))
         elif self.domain == 'mobile-attack':
             # Mobile data components are not yet in CTI, so this will not work
-            data_components = self.mitre.TC_MOBILE_SOURCE.query(Filter("type", "=", "x-mitre-data-component"))
+            data_components = self.mitre.mobile_source.query(Filter("type", "=", "x-mitre-data-component"))
 
         self.data_components = {}
         for data_component in data_components:
