@@ -19,7 +19,7 @@ from datetime import datetime
 from copy import deepcopy
 from logging import getLogger, ERROR as LOGERROR
 from ruamel.yaml import YAML
-from attackcti import attack_client
+from attack_taxii_client import attack_client
 from requests import exceptions
 from stix2 import datastore, Filter
 from anyascii import anyascii
