@@ -236,7 +236,7 @@ class DettectBase(object):
         Load the ATT&CK STIX data from the MITRE TAXII server.
         :return: MITRE ATT&CK data object (STIX)
         """
-        self._attack_software = self._convert_stix_software_to_dict(self.mitre.get_software(skip_revoked_deprecated=True))
+        self._attack_software = self._convert_stix_software_to_dict(self.mitre.get_software())
 
     def _get_software_from_attack(self, software_id: str) -> dict:
         """
