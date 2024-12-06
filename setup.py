@@ -13,7 +13,7 @@ See the [documentation](https://github.com/siriussecurity/dettectinator) for mor
 
 setuptools.setup(
     name="dettectinator",
-    version="1.4.3",
+    version="1.4.4",
     author="Sirius Security",
     description="Dettectinator - The Python library to your DeTT&CT YAML files.",
     long_description=long_description,
