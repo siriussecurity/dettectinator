@@ -348,7 +348,7 @@ class DettectTechniquesAdministration(DettectBase):
         :param clean_unused_applicable_to: boolean. When True, all detection objects with a applicable_to value that doesn't exist in the given detection_rules list will be removed.
         :return a list with results containing warnings or errors during the update process.
         """
-        date_today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+        date_today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
 
         # If detection_rules contains just one applicable to (as dictionary), convert the applicable_to data to a list to make it compatible:
         for rule_name, rule_data_values in detection_rules.items():
@@ -658,7 +658,7 @@ class DettectDataSourcesAdministration(DettectBase):
         :param  clean_unused_data_sources: boolean. When True, all data sources in YAML file that don't exist in the given data_sources list will be removed.
         :return a list with results containing warnings or errors during the update process.
         """
-        date_today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0, tzinfo=None)
+        date_today = datetime.now().replace(hour=0, minute=0, second=0, microsecond=0)
 
         warnings, results = self._add_data_sources(data_sources, date_today)
 
